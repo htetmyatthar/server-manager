@@ -1,0 +1,35 @@
+{{ define "title"}} Server Manager: admin {{ end }}
+
+{{ define "sources"}} 
+	<link rel="stylesheet" type="text/css" href="/static/css/admin.css">
+	<script type="text/javascript" defer src="/static/javascript/admin.js"></script>
+{{ end }}
+
+{{ define "header" }}{{ end }}
+
+{{ define "main"}} 
+<main>
+	<section class="card">
+		<h1>Admin panel Login</h1>
+		<div class="login-card">
+			<form class="form" action="/admin" method="POST">
+				<div class="input">
+					<input type="text" value="username" placeholder="username" required>
+				</div>
+				<div class="input">
+					<input type="password" value="password" placeholder="password" required>
+				</div>
+				<div class="input submit-btn">
+					<input type="submit" value="Login">
+				</div>
+			</form>
+		</div>
+	</section>
+</main>
+{{ end }}
+
+{{ define "footer"}} 
+<footer>
+	<p>&copy;2024 LoThone All rights served </p>
+</footer>
+{{ end }}

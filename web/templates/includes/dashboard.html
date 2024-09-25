@@ -1,0 +1,35 @@
+{{ define "title"}} Server Manager: dashboard {{ end }}
+
+{{ define "sources"}} 
+	<link rel="stylesheet" type="text/css" href="/static/css/dashboard.css">
+	<script type="text/javascript" defer src="/static/javascript/dashbard.js"></script>
+{{ end }}
+
+{{ define "header" }}{{ end }}
+
+{{ define "main"}} 
+<main>
+	<section class="table">
+		<table class="user-table">
+			
+		</table>
+	</section>
+
+	<section class="options">
+		<div class="server-options">
+			<dialog>
+				This is an open dialog window
+			</dialog>
+			<div class="submit-btn">
+				<input type="submit" value="Restart">
+			</div>
+		</div>
+	</section>
+</main>
+{{ end }}
+
+{{ define "footer"}} 
+<footer>
+	<p>&copy;2024 LoThone All rights served </p>
+</footer>
+{{ end }}
