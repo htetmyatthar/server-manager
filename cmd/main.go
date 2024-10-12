@@ -43,6 +43,9 @@ func init() {
 }
 
 func main() {
+	// TODO: store the keys in the backend and produce the config URI in backend.
+	// TODO: gotify server integration?
+	// TODO: use the json config
 
 	// static file server
 	fs := http.FileServer(http.Dir("web/static"))

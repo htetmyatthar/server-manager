@@ -24,16 +24,6 @@ import (
 	. "github.com/htetmyatthar/server-manager/internal/database"
 )
 
-// RecaptchaResponse is to use for checking bot against Google's ReCaptcha.
-type RecaptchaResponse struct {
-	Success     bool     `json:"success"`
-	Score       float64  `json:"score"`
-	Action      string   `json:"action"`
-	ChallengeTS string   `json:"challenge_ts"`
-	Hostname    string   `json:"hostname"`
-	ErrorCodes  []string `json:"error-codes,omitempty"`
-}
-
 // V2rayClient is to add or remove the users from the v2ray config.
 type V2rayClient struct {
 	Id      string `json:"id"`

@@ -1,10 +1,8 @@
 package handler
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -74,6 +72,7 @@ func AdminLoginGET(w http.ResponseWriter, r *http.Request) {
 }
 
 // AdminLoginPOST is a handler for logging into the admin dashboard.
+// TODO: rate limit and notifications to the gotify server?
 func AdminLoginPOST(w http.ResponseWriter, r *http.Request) {
 	_, err := r.Cookie(config.SessionCookieName)
 	// if no cookies login again.
@@ -485,44 +484,4 @@ func ServerRestartPOST(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.JSONRespond(w, http.StatusOK, "V2ray service restarted successfully.")
-}
-
-// verifyRecaptcha verifies the reCAPTCHA token with Google
-func verifyRecaptcha(recaptchaToken string) (utils.RecaptchaResponse, error) {
-	var recaptchaResponse utils.RecaptchaResponse
-
-	// Google reCAPTCHA API endpoint
-	recaptchaURL := "https://www.google.com/recaptcha/api/siteverify"
-	secretKey := "6LdyCFcqAAAAAAZIRgIwquyyZfBlS_Fj29fKoHgi"
-
-	// Create the POST request payload
-	data := []byte(fmt.Sprintf("secret=%s&response=%s", secretKey, recaptchaToken))
-
-	// Create the request
-	req, err := http.NewRequest("POST", recaptchaURL, bytes.NewBuffer(data))
-	if err != nil {
-		return recaptchaResponse, err
-	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	// Send the request
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return recaptchaResponse, err
-	}
-	defer resp.Body.Close()
-
-	// Read and parse the response body
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return recaptchaResponse, err
-	}
-
-	err = json.Unmarshal(body, &recaptchaResponse)
-	if err != nil {
-		return recaptchaResponse, err
-	}
-
-	return recaptchaResponse, nil
 }

@@ -121,6 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	const server = new Server();
 	const qrGenerator = new QRGenerator();
 
+	// TODO: autogenerate and don't bother the admin to click the button?
 	document.getElementById("uuidGenerateButton").addEventListener("click", () => {
 		document.querySelector("#serverUUID").value = generateUUID();
 	});
