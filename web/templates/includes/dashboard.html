@@ -1,35 +1,232 @@
 {{ define "title"}} Server Manager: dashboard {{ end }}
 
 {{ define "sources"}} 
-	<link rel="stylesheet" type="text/css" href="/static/css/dashboard.css">
-	<script type="text/javascript" defer src="/static/javascript/dashbard.js"></script>
+    <link rel="stylesheet" type="text/css" href="/static/css/dashboard.css">
+    <!-- Load QRCode library with SVG support first -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js" defer></script>
+    <!-- Then load your dashboard script -->
+    <script type="text/javascript" defer src="/static/javascript/dashboard2.js"></script>
 {{ end }}
 
 {{ define "header" }}{{ end }}
 
 {{ define "main"}} 
 <main>
-	<section class="table">
-		<table class="user-table">
-			
-		</table>
-	</section>
+    <section class="table">
+		<div class="users__heading">
+			<h1>Users List</h1>
+			<button id="userRefreshBtn" class="button" title="click to refresh">
+				<svg fill="#000000" viewBox="0 0 489.645 489.645" xml:space="preserve">
+					<g>
+						<path d="M460.656,132.911c-58.7-122.1-212.2-166.5-331.8-104.1c-9.4,5.2-13.5,16.6-8.3,27c5.2,9.4,16.6,13.5,27,8.3
+							c99.9-52,227.4-14.9,276.7,86.3c65.4,134.3-19,236.7-87.4,274.6c-93.1,51.7-211.2,17.4-267.6-70.7l69.3,14.5
+							c10.4,2.1,21.8-4.2,23.9-15.6c2.1-10.4-4.2-21.8-15.6-23.9l-122.8-25c-20.6-2-25,16.6-23.9,22.9l15.6,123.8
+							c1,10.4,9.4,17.7,19.8,17.7c12.8,0,20.8-12.5,19.8-23.9l-6-50.5c57.4,70.8,170.3,131.2,307.4,68.2
+							C414.856,432.511,548.256,314.811,460.656,132.911z"/>
+					</g>
+				</svg>
+			</button>
+		</div>
+		<p>*click the number of users to copy the text config.</p>
+        <table class="user-table">
+            <thead>
+                <tr>
+                    <th>Number</th>    
+                    <th>Username</th>    
+                    <th>Device UUID</th>    
+                    <th>Server UUID</th>    
+                    <th>Start date</th>    
+                    <th>Expire date</th>    
+                </tr>
+            </thead>
+            <tbody>
+                {{ range $index, $client := .Clients }}
+                <tr>
+					<td data-cell="Number" data-value="{{ $index }}">
+						<button title="click to copy config" type="button" class="copyBtn">
+							{{ $index }}
+						</button>
+					</td>
+                    <td data-cell="Username">{{ $client.Username }}</td>
+					<td data-cell="Device UUID"><span class="wrap">{{ $client.DeviceId }}</span></td>
+                    <td data-cell="Server UUID"><span class="wrap">{{ $client.Id }}</span></td>
+                    <td data-cell="Start date"><span class="nowrap">{{ $client.StartDate }}</span></td>
+                    <td data-cell="Expire date"><span class="nowrap">{{ $client.ExpireDate }}</span></td>
+                </tr>
+                {{ end }}
+            </tbody>
+        </table>
+    </section>
 
-	<section class="options">
-		<div class="server-options">
-			<dialog>
-				This is an open dialog window
-			</dialog>
-			<div class="submit-btn">
-				<input type="submit" value="Restart">
+	<hr>
+
+    <section class="options">
+		<div class="server-information table">
+			<div class="serverInfo">
+				<h2>Server Information</h2>
+				<button id="serverIPRefreshBtn" class="button" title="click to refresh">
+					<svg fill="#000000" viewBox="0 0 489.645 489.645" xml:space="preserve">
+						<g>
+							<path d="M460.656,132.911c-58.7-122.1-212.2-166.5-331.8-104.1c-9.4,5.2-13.5,16.6-8.3,27c5.2,9.4,16.6,13.5,27,8.3
+								c99.9-52,227.4-14.9,276.7,86.3c65.4,134.3-19,236.7-87.4,274.6c-93.1,51.7-211.2,17.4-267.6-70.7l69.3,14.5
+								c10.4,2.1,21.8-4.2,23.9-15.6c2.1-10.4-4.2-21.8-15.6-23.9l-122.8-25c-20.6-2-25,16.6-23.9,22.9l15.6,123.8
+								c1,10.4,9.4,17.7,19.8,17.7c12.8,0,20.8-12.5,19.8-23.9l-6-50.5c57.4,70.8,170.3,131.2,307.4,68.2
+								C414.856,432.511,548.256,314.811,460.656,132.911z"/>
+						</g>
+					</svg>
+				</button>
+			</div>
+			<table>
+				<thead>
+					<tr>
+						<th>Region</th>
+						<th>V2ray Server IP</th>
+						<th>V2ray Server Port</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td data-cell="Region">Singapore</td>
+						<td id="serverIP" data-cell="V2ray Server IP">{{ .ServerIP }}</td>
+						<td id="v2rayServerPort" data-cell="V2ray Server Port" data-port="{{ .V2rayServerPort }}">
+						{{ .V2rayServerPort }}
+					</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<hr>
+        <div class="server-options">
+            <h2>Server options</h2>
+            <button class="button openBtn" id="serverRestartModalBtn">Restart Server</button>
+            <dialog class="modal" id="modal">
+				<div class="modal__heading">
+					<h3>Restart V2ray server</h3>
+					<button class="closeModalBtn">
+						<svg viewBox="0 0 64 64">
+						<path id="times" d="M32.033,29.19l15.55,-15.55l2.863,2.863l-15.55,15.55l15.55,15.55l-2.863,2.863l-15.55,-15.55l-15.55,15.55l-2.863,-2.863l15.55,-15.55l-15.55,-15.55l2.863,-2.863l15.55,15.55Z"/>
+						<path d="M32.033,29.19l15.55,-15.55l2.863,2.863l-15.55,15.55l15.55,15.55l-2.863,2.863l-15.55,-15.55l-15.55,15.55l-2.863,-2.863l15.55,-15.55l-15.55,-15.55l2.863,-2.863l15.55,15.55Z"/>
+						</svg>
+					</button>
+				</div>
+				<div class="modal__items">
+					<p>This will take a second.</p>
+					<form class="modalForm" id="restartForm">
+						<input id="adminPassword" placeholder="admin password" name="adminPassword" type="password" required>
+						<input hidden id="CSRFToken" type="hidden" name="{{ .CSRFTokenName }}" value="{{ .CSRFToken }}">
+					</form>
+					<div class="restartModalButtons">
+						<button id="serverRestartBtn" class="button">Confirm</button>
+						<button class="closeModalBtn">Cancel</button>
+					</div>
+				</div>
+            </dialog>
+        </div>
+		<hr>
+        <div class="user-options">
+            <h2>User options</h2>
+			<div class="create_container">
+				<h3>Create new user</h3>
+				<form action="/admin/accounts" method="POST">
+					<input hidden type="hidden" name="{{ .CSRFTokenName }}" value="{{ .CSRFToken }}">
+					<div class="date_input">
+						<label for="formStartDate">start date</label>
+						<input id="formStartDate" type="date" name="startDate" required>
+					</div>
+					<div class="date_input">
+						<label for="formExpireDate">expire date</label>
+						<input id="formExpireDate" type="date" name="expireDate" required>
+					</div>
+					<div>
+						<input type="text" name="username" placeholder="username" required>
+					</div>
+					<div>
+						<input type="text" name="deviceUUID" placeholder="device uuid" required>
+					</div>
+					<div>
+						<input id="serverUUID" type="text" name="serverUUID" placeholder="server uuid" required>
+					</div>
+					<div class="buttons">
+						<button type="button" id="uuidGenerateButton" class="button"> Generate server uuid</button>
+						<button type="submit" class="button">Create</button>
+					</div>
+				</form>
+			</div>
+			<div class="delete_container">
+				<h3>Delete existing user</h3>
+				<form action="/admin/accounts/delete" method="POST">
+					<div>
+						<input type="hidden" name="{{ .CSRFTokenName }}" value="{{ .CSRFToken }}">
+					</div>
+					<div>
+						<input type="number" min="0" name="userNumber" placeholder="user number" required>
+					</div>
+					<div>
+						<input type="text" name="username" placeholder="username" required>
+					</div>
+					<div>
+						<input type="text" name="serverUUID" placeholder="server uuid" required>
+					</div>
+					<div class="buttons">
+						<button class="button" type="submit">Delete</button>
+					</div>
+				</form>
 			</div>
 		</div>
-	</section>
+		<hr>
+		<div class="qr-options">
+			<dialog class="modal" id="qrModal">
+				<div id="qrContainer">
+					<p>
+						<span id="qrUsername"></span>
+					</p>
+					<div id="qrCode"></div>
+					<p>
+						<span id="qrRemarks"></span>
+					</p>
+				</div>
+				<div id="buttonContainer">
+					<button id="closeQrModalBtn" class="closeModalBtn button">Done</button>
+				</div>
+			</dialog>
+			<div class="qrForm_container">
+				<div class="unlocked_container">
+					<h3>Open QR</h3>
+					<form class="qrForm open">
+						<div>
+							<input type="number" min="0" name="qrUserNumber" placeholder="user number" required>
+						</div>
+						<div class="buttons">
+							<button type="submit" class="button qrBtn">Generate</button>
+						</div>
+					</form>
+				</div>
+				<div class="locked_container">
+					<h3>Device-locked QR</h3>
+					<form class="qrForm locked">
+						<div>
+							<input type="number" min="0" name="qrUserNumber" placeholder="user number" required>
+						</div>
+						<div class="buttons">
+							<button type="submit" class="button qrBtn">Generate</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+    </section>
 </main>
 {{ end }}
 
 {{ define "footer"}} 
 <footer>
-	<p>&copy;2024 LoThone All rights served </p>
+    <p>
+		<span class="wrap">QR codes are guaranteed to work seamlessly with V2Box application.</span>
+		<br>
+		<span class="nowrap">&copy; 2024 LoThone. All rights reserved.</span>
+		<span class="nowrap wrap-point">Unauthorized use and/or duplication of this material</span>
+		<span class="nowrap">without express and written permission</span>
+		<span class="nowrap">from this site’s owner is strictly prohibited</span>
+	</p>
 </footer>
 {{ end }}

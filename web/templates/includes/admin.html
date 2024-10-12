@@ -9,18 +9,20 @@
 
 {{ define "main"}} 
 <main>
+	<h1>LoThone</h1>
 	<section class="card">
-		<h1>Admin panel Login</h1>
+		<h2>Admin panel Login</h2>
 		<div class="login-card">
-			<form class="form" action="/admin" method="POST">
+			<form class="form" action="/admin/login" method="POST">
+				<input hidden type="hidden" name="{{ .CSRFTokenName }}" value="{{ .CSRFToken }}">
 				<div class="input">
-					<input type="text" value="username" placeholder="username" required>
+					<input class="inputField" type="text" name="username" placeholder="username" required>
 				</div>
 				<div class="input">
-					<input type="password" value="password" placeholder="password" required>
+					<input class="inputField" type="password" name="password" placeholder="password" required>
 				</div>
-				<div class="input submit-btn">
-					<input type="submit" value="Login">
+				<div class="input">
+					<input class="button" id="loginBtn" type="submit" value="Login">
 				</div>
 			</form>
 		</div>
@@ -30,6 +32,6 @@
 
 {{ define "footer"}} 
 <footer>
-	<p>&copy;2024 LoThone All rights served </p>
+	<p>&copy;2024 LoThone All rights reserved.</p>
 </footer>
 {{ end }}
