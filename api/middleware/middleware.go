@@ -2,11 +2,16 @@ package middleware
 
 import (
 	"log"
+	"net"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
+	"golang.org/x/time/rate"
+
 	. "github.com/htetmyatthar/server-manager/internal/config"
+	data "github.com/htetmyatthar/server-manager/internal/database"
 	"github.com/htetmyatthar/server-manager/internal/utils"
 )
 
@@ -50,9 +55,9 @@ func Logging(next http.Handler) http.Handler {
 // LoginRequired checks the user has already logged in or not by
 // checking the session cookie. Otherwise, the user is redirect to
 // Login page and forced to login.
-func LoginRequired(next http.HandlerFunc) http.HandlerFunc {
+func LoginRequired(next http.HandlerFunc, sessionStore data.SessionStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		value, deleteCookiesFunc := utils.SessionValidate(r)
+		value, deleteCookiesFunc := utils.SessionValidate(r, sessionStore)
 		if deleteCookiesFunc != nil {
 			log.Println("Invalid session deleting cookies")
 			// utils.ErrInvalidSession will be returned
@@ -99,7 +104,6 @@ func CSRFRequired(next http.HandlerFunc) http.HandlerFunc {
 			log.Println("Error: ", responseMessage)
 			return
 		}
-		log.Println("why is it missing the token.")
 
 		// validate CSRF token
 		_, err := utils.VerifyCSRF(token, r)
@@ -116,5 +120,88 @@ func CSRFRequired(next http.HandlerFunc) http.HandlerFunc {
 
 		next.ServeHTTP(w, r)
 		return
+	}
+}
+
+// HttpClient represents a client with a rate limiter and the last seen time.
+type HttpClient struct {
+	limiter  *rate.Limiter
+	lastSeen time.Time
+}
+
+// RateLimiter holds the configuration for rate limiting.
+type RateLimiter struct {
+	// maps the clients's unique identifiers to the HttpClients
+	clients         map[string]*HttpClient
+	mu              sync.Mutex
+	r               rate.Limit
+	b               int
+	cleanupInterval time.Duration
+}
+
+// NewRateLimiterMiddleware initializes a new RateLimiterMiddleware. Also start a go routine to clean up the old clients.
+func NewRateLimiterMiddleware(r rate.Limit, b int, cleanupInterval time.Duration) *RateLimiter {
+	rl := &RateLimiter{
+		clients:         make(map[string]*HttpClient),
+		r:               r,
+		b:               b,
+		cleanupInterval: cleanupInterval,
+	}
+
+	// Start a background goroutine to clean up old clients.
+	go rl.cleanupClients()
+
+	return rl
+}
+
+// getClient retrieves the client's rate limiter, creating one if necessary.
+func (rl *RateLimiter) getClient(ip string) *rate.Limiter {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+
+	if client, exists := rl.clients[ip]; exists {
+		client.lastSeen = time.Now()
+		return client.limiter
+	}
+
+	limiter := rate.NewLimiter(rl.r, rl.b)
+	rl.clients[ip] = &HttpClient{
+		limiter:  limiter,
+		lastSeen: time.Now(),
+	}
+
+	return limiter
+}
+
+// cleanupClients periodically removes clients that haven't been seen for a while.
+func (rl *RateLimiter) cleanupClients() {
+	for {
+		time.Sleep(rl.cleanupInterval)
+		rl.mu.Lock()
+		for ip, client := range rl.clients {
+			if time.Since(client.lastSeen) > rl.cleanupInterval {
+				delete(rl.clients, ip)
+			}
+		}
+		rl.mu.Unlock()
+	}
+}
+
+// Limit limits the api calls with the rl's defined rules.
+func (rl *RateLimiter) Limit(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ip, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		limiter := rl.getClient(ip)
+		if !limiter.Allow() {
+			http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
+			return
+		}
+
+		next.ServeHTTP(w, r)
 	}
 }
