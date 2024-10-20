@@ -18,6 +18,7 @@ import (
 	h "github.com/htetmyatthar/server-manager/api/handler"
 	m "github.com/htetmyatthar/server-manager/api/middleware"
 	. "github.com/htetmyatthar/server-manager/internal/config"
+	d "github.com/htetmyatthar/server-manager/internal/database"
 	"github.com/htetmyatthar/server-manager/internal/utils"
 )
 
@@ -25,13 +26,24 @@ var (
 	muxHTTPS    *http.ServeMux
 	serverHTTPS *http.Server
 
-	muxHTTP    *http.ServeMux
-	serverHTTP *http.Server
+	muxHTTP      *http.ServeMux
+	serverHTTP   *http.Server
+	sessionStore d.SessionStore
+
+	// userLocker locks out the user from logging in if the user exceeds certain number of trials.
+	userLocker = utils.NewLockedOutRateLimiter()
+
+	// Defined rate limit: 1 request per every 5 seconds with a burst of 1 for each ip address.
+	// call Limit() method to apply the defined rate limit on the end points.
+	genericRateLimiter = m.NewRateLimiterMiddleware(1.0/5.0, 1, 5*time.Minute)
 )
 
 func init() {
 	// Store the hash only.
 	*AdminPw, _, _ = utils.HashPassword(*AdminPw)
+
+	// gets the new mem session store.
+	sessionStore = d.NewMemSessionStore()
 
 	// HTTPS server config
 	muxHTTPS, serverHTTPS = InitHTTPSServer()
@@ -44,8 +56,10 @@ func init() {
 
 func main() {
 	// TODO: store the keys in the backend and produce the config URI in backend.
-	// TODO: gotify server integration?
-	// TODO: use the json config
+	// TODO: embed the static files.
+	// TODO: check the index out of bound cases and if exists in slices when deleting and creating a qr.
+	// TODO: save the backup file and then check the config of the prepared file and if correct run and override,
+	// if not don't run and roll back to the back up file.
 
 	// static file server
 	fs := http.FileServer(http.Dir("web/static"))
@@ -60,15 +74,15 @@ func main() {
 	}))
 
 	// routes HTTPS
-	muxHTTPS.HandleFunc("/", m.LoginRequired(h.DefaultHandler))
-	muxHTTPS.HandleFunc("GET /admin/login", h.AdminLoginGET)
-	muxHTTPS.HandleFunc("GET /admin/dashboard", m.LoginRequired(h.AdminDashboardGET))
+	muxHTTPS.HandleFunc("/", m.LoginRequired(h.DefaultHandler, sessionStore))
+	muxHTTPS.HandleFunc("GET /admin/login", h.AdminLoginGET(sessionStore))
+	muxHTTPS.HandleFunc("GET /admin/dashboard", m.LoginRequired(h.AdminDashboardGET, sessionStore))
 	muxHTTPS.HandleFunc("GET /server/ip", h.ServerIPHandlerGET)
 
-	muxHTTPS.HandleFunc("POST /admin/login", m.CSRFRequired(h.AdminLoginPOST))
-	muxHTTPS.HandleFunc("POST /admin/accounts", m.CSRFRequired(m.LoginRequired(h.AccountCreatePOST)))
-	muxHTTPS.HandleFunc("POST /admin/accounts/delete", m.CSRFRequired(m.LoginRequired(h.AccountDeletePOST)))
-	muxHTTPS.HandleFunc("POST /server", m.CSRFRequired(m.LoginRequired(h.ServerRestartPOST)))
+	muxHTTPS.HandleFunc("POST /admin/login", m.CSRFRequired(h.AdminLoginPOST(sessionStore, userLocker)))
+	muxHTTPS.HandleFunc("POST /admin/accounts", m.CSRFRequired(m.LoginRequired(h.AccountCreatePOST, sessionStore)))
+	muxHTTPS.HandleFunc("POST /admin/accounts/delete", m.CSRFRequired(m.LoginRequired(h.AccountDeletePOST, sessionStore)))
+	muxHTTPS.HandleFunc("POST /server", genericRateLimiter.Limit(m.CSRFRequired(m.LoginRequired(h.ServerRestartPOST, sessionStore))))
 
 	// routes HTTP
 	muxHTTP.HandleFunc("/", h.RedirectToHTTPSHandler)
