@@ -17,8 +17,9 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	. "github.com/htetmyatthar/server-manager/internal/config"
 	. "github.com/htetmyatthar/server-manager/internal/database"
@@ -55,6 +56,10 @@ type Inbound struct {
 var (
 	// parse the templates from config
 	templates = InitTemplates()
+	// templates = InitEmbedTemplates()
+
+	ErrWrongPassword = errors.New("Wrong password")
+	ErrUserLockedOut = errors.New("User is locked out")
 )
 
 // CAUTION: Before calling this function always ensure to provided the status code with w.WriteHeader().
@@ -189,19 +194,19 @@ func GenerateSessionId(n int) (string, error) {
 //
 // Return the result(value) string(probably user id) that is stored inside dbRedis cache.
 // If result string is "NaN", it is utils.SessionPublic
-func SessionValidate(r *http.Request) (string, func(http.ResponseWriter) error) {
+func SessionValidate(r *http.Request, sessionStore SessionStore) (string, func(http.ResponseWriter) error) {
 	session, err := r.Cookie(SessionCookieName)
 	if err != nil {
 		return "", nil
 	}
-	value, ok := SessionStore[session.Value]
-	if !ok {
+	result, err := sessionStore.GetSession(session.Value)
+	if err != nil {
 		return "", func(w http.ResponseWriter) error {
 			DeleteAllCookies(w, r)
-			return ErrInvalidSession
+			return err
 		}
 	}
-	return value, nil
+	return result.Data, nil
 }
 
 // DeleteAllCookies deletes the cookies in the following paths to be deleted.
@@ -222,23 +227,25 @@ func DeleteAllCookies(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// TODO: fix the documentation:
 // SessionSetPath sets a new session to the given response to be able to access
-// the given path while also adding to the dbRedis cache. Returns the session cookie
-// that is being set and error if there's problem with creating random strings or redis cache problem.
+// the given path while also adding to the session store. Returns the session cookie
+// that is being set and error if there's problem with creating random strings or session store related problem.
 // CAUTION: for pattern matching for path parameter. if the path is suffixed with "/"(back-slash),
 // the cookie will be sent to all the sub-paths under the prefix.
 // e.g. "/login/" will match both "/login/60", andf"/login/page/" but not "/loginpage/"
 // e.g. "/login" will exactly match with http path "/login"
-func SessionSetPath(w http.ResponseWriter, path string) (*http.Cookie, string, error) {
+func SessionSetPath(w http.ResponseWriter, path string, sessionStore SessionStore) (*http.Cookie, string, error) {
 	// pre-session tokens for login form
 	sessionString, err := GenerateSessionId(32)
 	if err != nil {
 		return nil, "", err
 	}
-	expireTime := 600 // NOTE: 10mins
 
-	SessionStore[sessionString] = SessionPublic
+	// HACK: use the configured session duration with the seconds value.
+	expireTime := *SessionDuration * 60
+
+	// creating a public session record.
+	sessionStore.CreateSession(sessionString, SessionPublic)
 
 	// create new session cookie
 	session := &http.Cookie{
@@ -327,7 +334,6 @@ func VerifyCSRF(token string, r *http.Request) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	log.Println("they didn't make pass this.")
 
 	// comparing token's session and requested session
 	if messageValues[0] != rSession.Value {
@@ -354,22 +360,20 @@ func VerifyCSRF(token string, r *http.Request) (bool, error) {
 	return false, errors.New("DANGER: Internal Server error.")
 }
 
-// SessionSetPrivate sets the session to the given w using u while also adding
-// to the dbRedis cache. User u's id field should be initialized with real value.
-// Return error if there's problem with creating random session strings or redis cache problem,
-// and also when the user's id
-func SessionSetPrivate(w http.ResponseWriter) error {
+// SessionSetPrivate sets the session to the given path while also adding to the sessionStore cache.
+// Return error if there's problem with creating random session strings or sessionStore cache problem.
+func SessionSetPrivate(w http.ResponseWriter, path string, sessionStore SessionStore) error {
 	// create session string
 	sessionString, err := GenerateSessionId(32)
 	if err != nil {
 		return err
 	}
 
-	// NOTE: valid for 10mins.
-	expireTime := 600
+	// HACK: used the configured session duration with seconds.
+	expireTime := *SessionDuration * 60
 
-	SessionStore[sessionString] = strconv.Itoa(SessionCount)
-	SessionCount++
+	// emmpty string to add the default data which is the id.
+	sessionStore.CreateSession(sessionString, "")
 
 	// create new session cookie
 	session := &http.Cookie{
@@ -408,8 +412,7 @@ func VerifyPassword(password string, correct string) (bool, error) {
 	if subtle.ConstantTimeCompare(hashBytes, userPassword) == 1 {
 		return true, nil
 	}
-	log.Println("Verify password gone wrong.")
-	return false, errors.New("Wrong password")
+	return false, ErrWrongPassword
 }
 
 // HashPassword hashes the given password string to sha-256 hash returning the hashed values
@@ -423,4 +426,149 @@ func HashPassword(password string) (string, []byte, error) {
 	hashedBytes := hasher.Sum(nil)
 	// hex is easier to maintain
 	return hex.EncodeToString(hashedBytes), hashedBytes, err
+}
+
+// LoginAttempt tracks failed login attempts and lockout status
+type LoginAttempt struct {
+	FailedCount int
+	LockedUntil time.Time
+}
+
+// LockedOutRateLimiter manages login attempts and lockouts on usernames.
+type LockedOutRateLimiter struct {
+	// maps the account owner usernames to the login attempts.
+	attempts map[string]*LoginAttempt
+	mu       sync.Mutex
+}
+
+// NewRateLimiter initializes a new RateLimiter
+func NewLockedOutRateLimiter() *LockedOutRateLimiter {
+	rl := &LockedOutRateLimiter{
+		attempts: make(map[string]*LoginAttempt),
+	}
+
+	// Start the cleanup goroutine
+	go rl.cleanup()
+
+	return rl
+}
+
+// RecordFailedAttempt increments the failed attempt count and locks out the user if necessary.
+// Returns ErrUserLockedOut if the user is being locked out for too many failed attempts.
+func (rl *LockedOutRateLimiter) RecordFailedAttempt(username string) error {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+
+	attempt, exists := rl.attempts[username]
+	if !exists {
+		attempt = &LoginAttempt{
+			FailedCount: 1,
+			LockedUntil: time.Time{},
+		}
+		rl.attempts[username] = attempt
+		return nil
+	}
+
+	attempt.FailedCount++
+	if attempt.FailedCount >= MaxFailedAttempts {
+		attempt.LockedUntil = time.Now().Add(time.Duration(*LockOutDuration) * time.Minute)
+		log.Printf("User %s has been locked out until %s due to too many failed login attempts.", username, attempt.LockedUntil.Format(time.RFC1123))
+		return ErrUserLockedOut
+	}
+	return nil
+}
+
+// ResetAttempts resets the failed attempt count for a user
+func (rl *LockedOutRateLimiter) ResetAttempts(username string) {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+
+	if _, exists := rl.attempts[username]; exists {
+		delete(rl.attempts, username)
+		log.Printf("User %s has successfully logged in. Failed attempts reset.", username)
+	}
+}
+
+// IsLockedOut checks if a user is currently locked out
+func (rl *LockedOutRateLimiter) IsLockedOut(username string) bool {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+
+	attempt, exists := rl.attempts[username]
+	if !exists {
+		return false
+	}
+
+	if time.Now().Before(attempt.LockedUntil) {
+		return true
+	}
+
+	// If lockout period has passed, but user still has failed attempts
+	return false
+}
+
+// cleanup periodically removes old entries to prevent memory leaks
+func (rl *LockedOutRateLimiter) cleanup() {
+	ticker := time.NewTicker(30 * time.Minute)
+	defer ticker.Stop()
+
+	for {
+		<-ticker.C
+		rl.mu.Lock()
+		for username, attempt := range rl.attempts {
+			if time.Now().After(attempt.LockedUntil) && attempt.FailedCount == 0 {
+				delete(rl.attempts, username)
+				log.Printf("Cleaned up session for user %s.", username)
+			}
+		}
+		rl.mu.Unlock()
+	}
+}
+
+type GotifyMessage struct {
+	Title    string `json:"title"`
+	Message  string `json:"message"`
+	Priority int    `json:"priority"`
+}
+
+// SendNoti sends the current situation to the gotify server.
+func SendNoti(gotifyServer, appToken, title, message string, priority int) error {
+	msg := GotifyMessage{
+		Title:    title,
+		Message:  message,
+		Priority: priority,
+	}
+
+	payload, err := json.Marshal(msg)
+	if err != nil {
+		log.Printf("failed to marshal JSON payload: %v\n", err)
+		return err
+	}
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("https://%s/message", gotifyServer), bytes.NewBuffer(payload))
+	if err != nil {
+		log.Printf("failed to create HTTP request: %v", err)
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Gotify-Key", appToken)
+
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("failed to send HTTP request: %v", err)
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		log.Printf("gotify server returned non-2xx status: %d %s", resp.StatusCode, resp.Status)
+		return err
+	}
+
+	return nil
 }
