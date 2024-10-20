@@ -13,6 +13,7 @@ import (
 )
 
 var (
+	gotifyAPIKeys    *string
 	WebHost          *string
 	WebHostIP        *string
 	Admin            *string
@@ -23,6 +24,10 @@ var (
 	V2rayPort        *string
 	UserFile         *string
 	ConfigFile       *string
+	SessionDuration  *int
+	LockOutDuration  *int
+	GotifyServer     *string
+	GotifyAPIKeys    []string
 	TemplateBasePath string = "web/templates/"
 
 	CsrfSecret      string
@@ -46,6 +51,9 @@ const (
 	// Using this to make sure the cookies are not named explicityly to avoid from advasaries
 	// attempt of stealing cookies.
 	CSRFHeaderFieldName string = "token"
+
+	// Maximum allowed failed attempts for user authentications.
+	MaxFailedAttempts = 5
 )
 
 func init() {
@@ -59,10 +67,15 @@ func init() {
 	AdminPw = flag.String("adminpw", "lothoneadmin0", "admin password for the web server")
 	UserFile = flag.String("userfile", "test/user_data.json", "track the users of the server")
 	ConfigFile = flag.String("configfile", "test/server.json", "config file of the v2ray proxy server")
+	GotifyServer = flag.String("gotifyserver", "meet.htetmyatthar.me:8080", "push nofication server domain name")
+	gotifyAPIKeys = flag.String("gotifyapikeys", "somekey,somekey", "keys for using with push notification system seperated by comma(,)")
+	SessionDuration = flag.Int("sessionduration", 10, "loggedin session remembered duration in minutes")
+	LockOutDuration = flag.Int("lockoutduration", 30, "locking out time for wrong password in minutes")
 
 	// parse the flags
 	flag.Parse()
 
+	GotifyAPIKeys = strings.Split(*gotifyAPIKeys, ",")
 	CsrfSecret = "a1b2c3d4e5f60708192a3b4c5d6e7f80"
 	CsrfSecretBytes = []byte(CsrfSecret)
 }
