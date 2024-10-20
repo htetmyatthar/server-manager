@@ -1,5 +1,5 @@
-# Shwe Chin Lone Web
-This repository is the implementations of the web version of Shwe Chin Lone Organizations.
+# LoThone Panel
+This is the v2ray server manager of vmess config namely LoThone panel.
 
 # Development
 ## How to run
@@ -108,7 +108,53 @@ air
     ```
 
 5) Automation
-    - V2ray server manager uses in-memory session storage. So in-order to be invalid the older sessions, it needs to be restarted. You can do that by creating a `cron` job.
+    - V2ray server manager uses certificates to encrypt the connection between the clients and the server. You can create the certificates signed by [letsencrypt](https://letsencrypt.org) using [certbot](https://certbot.eff.org).
+    ```bash
+    sudo apt install certbot
+    ```
+
+    1) Using certbot only
+
+        ```bash
+        sudo certbot certonly --standalone --preferred-challenges http --agree-tos --key-type rsa --email <your_email_address> -d <your_full_domain_name>
+        ```
+
+    2) Using nginx plugins
+
+        ```bash
+        sudo vim /etc/nginx/conf.d/<your_full_domain_name>.conf
+        ```
+        paste the following lines into the file.
+        ```bash
+        server {
+              listen 80;
+              server_name <your_full_domain_name>;
+
+              root /var/www/html/;
+
+              location ~ /.well-known/acme-challenge {
+                 allow all;
+              }
+        }
+        ```
+        create the web root directory.
+        ```bash
+        sudo mkdir -p /var/www/html
+        ```
+        www-data(nginx user) as the owner of the web root.
+        ```bash
+        sudo chown www-data:www-data /var/www/html -R
+        ```
+        reload nginx for the changes to take effect.
+        ```bash
+        sudo systemctl reload nginx
+        ```
+        create the certificate
+        ```bash
+        sudo certbot certonly --webroot --agree-tos --key-type rsa --email <your_email_address> -d <your_full_domain_name> -w /var/www/html
+        ```
+
+    Since letsencrypt certificates do expire you have to renew the certificates. You can do that by creating a `cron` job.
     - For starter, run the following command to se the cron server is running
     ```bash
     sudo systemctl status cron
@@ -117,9 +163,9 @@ air
     ```bash
     sudo crontab -e
     ```
-    - Add the Cron job, for example to restart the server-manager every day at 2 AM, add the following line.
+    - Add the Cron job, for example to renew the server-manager every day, add the following line.
     ```txt
-    0 2 * * * /bin/systemctl restart v2ray
+    @daily certbot renew --quiet; systemctl restart server-manager
     ```
     - Verify the cronjob you have just added.
     ```bash
