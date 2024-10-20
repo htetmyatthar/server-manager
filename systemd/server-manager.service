@@ -4,23 +4,13 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/path/to/project-root/server-manager-bin/server-manager \ 
-		-admin="admin@lothone.shop" \
-		-adminpw="774c8f08-f500-49c2-a00b-68de23aa0070" \
-		-configfile="" \
-		-userfile="" \
-		-hostip="" \
-		-hostname="" \
-		-v2rayport="443" \
-		-webcert="" \
-		-webkey="" \
-		-webport=":8080"
+ExecStart=/path/to/project-root/server-manager-bin/server-manager  --admin="admin@lothone.shop" --adminpw="774c8f08-f500-49c2-a00b-68de23aa0070" --configfile="" --userfile="" --hostip="" --hostname="" --v2rayport="443" --webcert="" --webkey="" --webport=":8080" --gotifyapikeys="," --gotifyserver="" --lockoutduration="" --sessionduration=""
 Restart=on-failure
 RestartSec=5
-User=v2rayadmin
-Group=v2rayadmin
+User=root
+Group=root
 WorkingDirectory=/path/to/project-root
-ExecStartPre=/usr/bin/some-command  # Optional: Run config v2ray server config checking.
+#ExecStartPre=/usr/bin/some-command  # Optional: Run config v2ray server config checking.
 StandardOutput=journal
 StandardError=journal
 LimitNOFILE=4096
