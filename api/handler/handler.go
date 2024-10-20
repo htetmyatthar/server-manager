@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
 
 	"github.com/htetmyatthar/server-manager/internal/config"
+	"github.com/htetmyatthar/server-manager/internal/database"
 	"github.com/htetmyatthar/server-manager/internal/utils"
 )
 
@@ -36,91 +38,130 @@ func ApologyHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // AdminLoginGET is to show the admin login page.
-func AdminLoginGET(w http.ResponseWriter, r *http.Request) {
-	sessionCookie, err := r.Cookie(config.SessionCookieName)
-	var sessionId string
-	// if no cookies login again.
-	if err != nil && err == http.ErrNoCookie {
-		_, sessionId, err = utils.SessionSetPath(w, "/admin/login")
+func AdminLoginGET(sessionStore data.SessionStore) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		sessionCookie, err := r.Cookie(config.SessionCookieName)
+		var sessionId string
+		// if no cookies login again.
+		if err != nil && err == http.ErrNoCookie {
+			_, sessionId, err = utils.SessionSetPath(w, "/admin/login", sessionStore)
+			if err != nil {
+				utils.RenderError(w, "Public session generation gone wrong. Please try again.", http.StatusInternalServerError)
+				return
+			}
+			log.Println("empty sessionvalue to new sessionvalue: ", sessionId)
+		} else {
+			sessionId = sessionCookie.Value
+		}
+		// generate token
+		token, err := utils.GenerateCSRF(sessionId)
 		if err != nil {
-			utils.RenderError(w, "Public session generation gone wrong. Please try again.", http.StatusInternalServerError)
+			log.Println("csrf generation gone wrong.", err)
+			utils.RenderError(w, "CSRF token generation gone wrong", http.StatusInternalServerError)
 			return
 		}
-		log.Println("empty sessionvalue to new sessionvalue: ", sessionId)
-	} else {
-		sessionId = sessionCookie.Value
-	}
-	// generate token
-	token, err := utils.GenerateCSRF(sessionId)
-	if err != nil {
-		log.Println("csrf generation gone wrong.", err)
-		utils.RenderError(w, "CSRF token generation gone wrong", http.StatusInternalServerError)
+
+		data := struct {
+			CSRFToken     string
+			CSRFTokenName string
+		}{
+			CSRFToken:     token,
+			CSRFTokenName: config.CSRFFormFieldName,
+		}
+
+		w.WriteHeader(http.StatusOK)
+		utils.RenderTemplate(w, "admin", data)
 		return
 	}
-
-	data := struct {
-		CSRFToken     string
-		CSRFTokenName string
-	}{
-		CSRFToken:     token,
-		CSRFTokenName: config.CSRFFormFieldName,
-	}
-
-	w.WriteHeader(http.StatusOK)
-	utils.RenderTemplate(w, "admin", data)
-	return
 }
 
 // AdminLoginPOST is a handler for logging into the admin dashboard.
-// TODO: rate limit and notifications to the gotify server?
-func AdminLoginPOST(w http.ResponseWriter, r *http.Request) {
-	_, err := r.Cookie(config.SessionCookieName)
-	// if no cookies login again.
-	if err == http.ErrNoCookie {
-		log.Println("Attempt to access dashboard without the session cookie.")
-		http.Redirect(w, r, "/admin/login", http.StatusFound)
+func AdminLoginPOST(sessionStore data.SessionStore, userLocker *utils.LockedOutRateLimiter) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		_, err := r.Cookie(config.SessionCookieName)
+		// if no cookies login again.
+		if err == http.ErrNoCookie {
+			log.Println("Attempt to access dashboard without the session cookie.")
+			http.Redirect(w, r, "/admin/login", http.StatusFound)
+			return
+		}
+
+		username := r.FormValue("username")
+		password := r.FormValue("password")
+
+		ip, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		if userLocker.IsLockedOut(username) {
+
+			log.Println("Too many failed attempts, ", ip)
+			utils.RenderError(w, "Too many failed attempts. Try again later. Contact administrator if needed.", http.StatusTooManyRequests)
+			return
+		}
+
+		if username == "" || password == "" {
+			log.Println("Attempt with empty password or username.")
+			utils.RenderError(w, "Invalid format.", http.StatusBadRequest)
+			return
+		}
+
+		if username != *config.Admin {
+			log.Println("Attempt with wrong username.")
+			utils.RenderError(w, "Unauthorized.", http.StatusUnauthorized)
+			return
+		}
+
+		correct, err := utils.VerifyPassword(password, *config.AdminPw)
+		// handle hashing errors.
+		if err != nil && err != utils.ErrWrongPassword {
+			log.Println("verifying user password gone wrong.", err)
+			utils.RenderError(w, "Internal Server Error.", http.StatusInternalServerError)
+			return
+		}
+
+		// incorrect password.
+		if correct != true {
+
+			err = userLocker.RecordFailedAttempt(username)
+			// prepare and send the noti if the user is being locked out.
+			if err != nil && err == utils.ErrUserLockedOut {
+				// prepare and send a notification
+				title := *config.WebHost + " - User locked out"
+				message := "User [[" + username + "]] is locked out for " + strconv.Itoa(*config.LockOutDuration) + " minutes"
+				for _, key := range config.GotifyAPIKeys {
+					utils.SendNoti(*config.GotifyServer, key, title, message, 9)
+				}
+			}
+
+			log.Println("Attempt with wrong password.")
+			http.Redirect(w, r, "/admin/login", http.StatusFound)
+			return
+		}
+
+		// reset password attempts.
+		userLocker.ResetAttempts(username)
+
+		// set the session.
+		err = utils.SessionSetPrivate(w, "/", sessionStore)
+		if err != nil {
+			log.Println("session setting gone wrong.", err)
+			utils.RenderError(w, "session setting gone wrong", http.StatusInternalServerError)
+			return
+		}
+
+		// send a notification to the gotify server.
+		title := *config.WebHost + " - " + username + " logged in"
+		message := username + " logged into "+ *config.WebHostIP + " using " + ip
+		for _, key := range config.GotifyAPIKeys {
+			utils.SendNoti(*config.GotifyServer, key, title, message, 9)
+		}
+
+		http.Redirect(w, r, "/admin/dashboard", http.StatusFound)
 		return
 	}
-
-	username := r.FormValue("username")
-	password := r.FormValue("password")
-
-	if username == "" || password == "" {
-		log.Println("Attempt with empty password or username.")
-		utils.RenderError(w, "Invalid format.", http.StatusBadRequest)
-		return
-	}
-
-	if username != *config.Admin {
-		log.Println("Attempt with wrong username.")
-		utils.RenderError(w, "Unauthorized.", http.StatusUnauthorized)
-		return
-	}
-
-	correct, err := utils.VerifyPassword(password, *config.AdminPw)
-	// definitely hashing errors.
-	if err != nil {
-		log.Println("verifying user password gone wrong.", err)
-		utils.RenderError(w, "Internal Server Error.", http.StatusInternalServerError)
-		return
-	}
-
-	// incorrect password.
-	if correct != true {
-		log.Println("Attempt with wrong password.")
-		http.Redirect(w, r, "/admin/login", http.StatusFound)
-		return
-	}
-
-	err = utils.SessionSetPrivate(w)
-	if err != nil {
-		log.Println("session setting gone wrong.", err)
-		utils.RenderError(w, "session setting gone wrong", http.StatusInternalServerError)
-		return
-	}
-
-	http.Redirect(w, r, "/admin/dashboard", http.StatusFound)
-	return
 }
 
 // AdminDashboardGET is to show the admin dashboard.
@@ -277,7 +318,6 @@ func AccountCreatePOST(w http.ResponseWriter, r *http.Request) {
 		utils.RenderError(w, "Error adding a new client to the existings configuration.", http.StatusInternalServerError)
 		return
 	}
-	fmt.Println(string(finalConfigJSON))
 
 	// marshal the entire users result map back to JSON
 	finalUserJSON, err := json.MarshalIndent(userResult, "", " ")
@@ -286,7 +326,6 @@ func AccountCreatePOST(w http.ResponseWriter, r *http.Request) {
 		utils.RenderError(w, "Error adding a new user to the users file.", http.StatusInternalServerError)
 		return
 	}
-	fmt.Println(string(finalUserJSON))
 
 	// Optional: Write the modified JSON back to a file
 	err = os.WriteFile(*config.ConfigFile, finalConfigJSON, 0644)
@@ -302,6 +341,19 @@ func AccountCreatePOST(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error writing modified JSON to file:", err)
 		utils.RenderError(w, "Error adding a new user to the users file.", http.StatusInternalServerError)
 		return
+	}
+
+	// prepare and send a push notification
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		log.Println("Error getting the ip address of the requester.")
+		utils.RenderError(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	title := *config.WebHost + " - New user is created"
+	message := newClient.Username + "@" + *config.WebHostIP + " with [[" + newClient.Id + "]] is created by " + ip
+	for _, key := range config.GotifyAPIKeys {
+		utils.SendNoti(*config.GotifyServer, key, title, message, 5)
 	}
 
 	// since this has to be relative path there shouldn't be any "/" infront of(admin) the current path.
@@ -377,7 +429,9 @@ func AccountDeletePOST(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// delete the user
+	// store for future references.
+	deletedUser := users[userNumber]
+
 	inbounds[0].Settings.Clients = append(inbounds[0].Settings.Clients[:userNumber], inbounds[0].Settings.Clients[userNumber+1:]...)
 	users = append(users[:userNumber], users[userNumber+1:]...)
 
@@ -407,7 +461,6 @@ func AccountDeletePOST(w http.ResponseWriter, r *http.Request) {
 		utils.RenderError(w, "Error adding a new client to the existings configuration.", http.StatusInternalServerError)
 		return
 	}
-	fmt.Println(string(finalConfigJSON))
 
 	// marshal the entire users result map back to JSON
 	finalUserJSON, err := json.MarshalIndent(userResult, "", " ")
@@ -416,7 +469,6 @@ func AccountDeletePOST(w http.ResponseWriter, r *http.Request) {
 		utils.RenderError(w, "Error adding a new user to the users file.", http.StatusInternalServerError)
 		return
 	}
-	fmt.Println(string(finalUserJSON))
 
 	// Optional: Write the modified JSON back to a file
 	err = os.WriteFile(*config.ConfigFile, finalConfigJSON, 0644)
@@ -432,6 +484,19 @@ func AccountDeletePOST(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error writing modified JSON to file:", err)
 		utils.RenderError(w, "Error adding a new user to the users file.", http.StatusInternalServerError)
 		return
+	}
+
+	// prepare and send a push notification
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		log.Println("Error getting the ip address of the requester.")
+		utils.RenderError(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	title := *config.WebHost + " - Existing user is deleted."
+	message := deletedUser.Username + "@" + *config.WebHostIP + " with [[" + deletedUser.Id + "]] is deleted by " + ip
+	for _, key := range config.GotifyAPIKeys {
+		utils.SendNoti(*config.GotifyServer, key, title, message, 5)
 	}
 
 	http.Redirect(w, r, "/admin/dashboard", http.StatusFound)
@@ -481,6 +546,18 @@ func ServerRestartPOST(w http.ResponseWriter, r *http.Request) {
 		utils.JSONRespondError(w, http.StatusInternalServerError, "Failed to restart v2ray server.")
 		log.Println("restart server by web ui failed.", err)
 		return
+	}
+
+	// prepare and send push notification
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		utils.RenderError(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	title := *config.WebHost + " - v2ray server " + *config.WebHostIP + " restarted."
+	message := "server " + *config.WebHostIP + " restarted by " + ip
+	for _, key := range config.GotifyAPIKeys {
+		utils.SendNoti(*config.GotifyServer, key, title, message, 9)
 	}
 
 	utils.JSONRespond(w, http.StatusOK, "V2ray service restarted successfully.")
