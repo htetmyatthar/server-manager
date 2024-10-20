@@ -12,16 +12,7 @@
       "listen": "0.0.0.0",
       "protocol": "vmess",
       "settings": {
-        "users": [
-          {
-            "id": "93094a78-bba6-4df1-aac9-3d3a76aa29c8",
-            "alterId": 1
-          },
-          {
-            "id": "55c55d58-592b-4704-9938-ace1ee646bea",
-            "alterId": 1
-          }
-        ]
+        "clients": []
       },
       "streamSettings": {
         "network": "tcp",
