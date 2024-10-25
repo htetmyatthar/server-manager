@@ -5,11 +5,14 @@ package config
 import (
 	"flag"
 	"html/template"
+	"io/fs"
 	"log"
 	"net/http"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/htetmyatthar/server-manager/web"
 )
 
 var (
@@ -136,4 +139,73 @@ func InitTemplates() map[string]*template.Template {
 	}
 
 	return templates
+}
+
+// Initialize templates from embedded filesystem
+func InitEmbedTemplates() (*template.Template, map[string]*template.Template){
+	// Initialize template maps
+	templates := make(map[string]*template.Template)
+
+	// Initialize error template first
+	errorTmpl, err := template.ParseFS(web.WebFS, "templates/includes/apology.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Read layout files
+	layouts, err := fs.Glob(web.WebFS, "templates/layouts/*.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Read include files
+	includes, err := fs.Glob(web.WebFS, "templates/includes/*.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Parse each template with its layout
+	for _, include := range includes {
+		// Skip apology template as it's handled separately
+		if strings.Contains(include, "apology.html") {
+			continue
+		}
+
+		var files []string
+		files = append(files, layouts...)
+		files = append(files, include)
+
+		name := strings.TrimSuffix(filepath.Base(include), ".html")
+		t := template.New(filepath.Base(include))
+
+		// Parse all files from embedded filesystem
+		for _, file := range files {
+			data, err := web.WebFS.ReadFile(file)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			_, err = t.Parse(string(data))
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+
+		templates[name] = t
+	}
+
+	return errorTmpl, templates
+}
+
+// Initialize static file server from embedded filesystem
+func InitStaticServer() http.Handler {
+	// Get the static subdirectory
+	staticFS, err := fs.Sub(web.WebFS, "static")
+	if err != nil {
+		log.Fatal("failed to create sub file system: ", err)
+	}
+
+	// Create file server from embedded files
+	fsHandler := http.FileServer(http.FS(staticFS))
+	return fsHandler
 }
