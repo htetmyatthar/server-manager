@@ -12,6 +12,8 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+
+	// "path/filepath"
 	"syscall"
 	"time"
 
@@ -29,6 +31,9 @@ var (
 	muxHTTP      *http.ServeMux
 	serverHTTP   *http.Server
 	sessionStore d.SessionStore
+
+	// embedded static file handler
+	staticHandler http.Handler
 
 	// userLocker locks out the user from logging in if the user exceeds certain number of trials.
 	userLocker = utils.NewLockedOutRateLimiter()
@@ -52,26 +57,41 @@ func init() {
 	// HTTP server config
 	muxHTTP, serverHTTP = InitHTTPServer()
 	serverHTTP.Handler = m.Logging(muxHTTP)
+
+	// static files handler via file paths.
+	staticHandler = InitStaticServer()
 }
 
 func main() {
 	// TODO: store the keys in the backend and produce the config URI in backend.
-	// TODO: embed the static files.
 	// TODO: check the index out of bound cases and if exists in slices when deleting and creating a qr.
 	// TODO: save the backup file and then check the config of the prepared file and if correct run and override,
 	// if not don't run and roll back to the back up file.
 
 	// static file server
-	fs := http.FileServer(http.Dir("web/static"))
-	staticHandler := http.StripPrefix("/static/", fs)
-	muxHTTPS.Handle("GET /static/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if filepath.Ext(r.URL.Path) == ".css" {
+	muxHTTPS.Handle("GET /static/", http.StripPrefix("/static/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set appropriate content type headers
+		ext := filepath.Ext(r.URL.Path)
+		switch ext {
+		case ".css":
 			w.Header().Set("Content-Type", "text/css")
-		} else if filepath.Ext(r.URL.Path) == ".js" {
+		case ".js":
 			w.Header().Set("Content-Type", "text/javascript")
+		case ".svg":
+			w.Header().Set("Content-Type", "image/svg+xml")
+		case ".png":
+			w.Header().Set("Content-Type", "image/png")
+		case ".jpg", ".jpeg":
+			w.Header().Set("Content-Type", "image/jpeg")
+		case ".gif":
+			w.Header().Set("Content-Type", "image/gif")
 		}
+
+		// Set cache headers
+		w.Header().Set("Cache-Control", "public, max-age=31536000")
+
 		staticHandler.ServeHTTP(w, r)
-	}))
+	})))
 
 	// routes HTTPS
 	muxHTTPS.HandleFunc("/", m.LoginRequired(h.DefaultHandler, sessionStore))
