@@ -55,8 +55,8 @@ type Inbound struct {
 
 var (
 	// parse the templates from config
-	templates = InitTemplates()
-	// templates = InitEmbedTemplates()
+	// templates = InitTemplates()
+	apologyTemplate, templates = InitEmbedTemplates()
 
 	ErrWrongPassword = errors.New("Wrong password")
 	ErrUserLockedOut = errors.New("User is locked out")
@@ -99,7 +99,7 @@ func RenderParseTemplate(w http.ResponseWriter, data any, filenames ...string) {
 }
 
 // apologyTemplate is parsed apology.html one to used with RenderError.+
-var apologyTemplate = template.Must(template.ParseFiles("web/templates/includes/apology.html"))
+// var apologyTemplate = template.Must(template.ParseFiles("web/templates/includes/apology.html"))
 
 // RenderError reders the apology template with the given status and return the parsed
 // template as http response. `apology.html` file should be in the path
@@ -154,7 +154,7 @@ func JSONRespondError(w http.ResponseWriter, code int, msg string) {
 
 // Function to restart V2Ray service
 func RestartService() error {
-	cmd := exec.Command("sudo", "systemctl", "restart", "v2ray2")
+	cmd := exec.Command("sudo", "systemctl", "restart", "v2ray")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("Failed to restart service: %s, %v", string(output), err)
@@ -525,6 +525,7 @@ func (rl *LockedOutRateLimiter) cleanup() {
 	}
 }
 
+// Message data for the gotify server.
 type GotifyMessage struct {
 	Title    string `json:"title"`
 	Message  string `json:"message"`
