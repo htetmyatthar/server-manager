@@ -4,10 +4,12 @@ package config
 
 import (
 	"flag"
+	"fmt"
 	"html/template"
 	"io/fs"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -19,8 +21,7 @@ var (
 	gotifyAPIKeys    *string
 	WebHost          *string
 	WebHostIP        *string
-	Admin            *string
-	AdminPw          *string
+	Admins           *string
 	WebPort          *string
 	WebCert          *string
 	WebKey           *string
@@ -56,7 +57,12 @@ const (
 	CSRFHeaderFieldName string = "token"
 
 	// Maximum allowed failed attempts for user authentications.
-	MaxFailedAttempts = 5
+	MaxFailedAttempts int = 5
+
+	// TODO: change version variable and in the url of the static files path whenever making a release.
+
+	// version number of this server.
+	Version string = "v0.2.0-beta"
 )
 
 func init() {
@@ -66,17 +72,23 @@ func init() {
 	V2rayPort = flag.String("v2rayport", "443", "port number of the v2ray proxy server")
 	WebCert = flag.String("webcert", "localhost.crt", "ssl/tls certificate for the web server")
 	WebKey = flag.String("webkey", "localhost.key", "ssl/tls certificate key for the web server")
-	Admin = flag.String("admin", "lothoneadmin", "admin username for the web server")
-	AdminPw = flag.String("adminpw", "lothoneadmin0", "admin password for the web server")
+	Admins = flag.String("admins", "lothoneadmin~lothoneadmin0,lothoneadmin1~lothoneadmin1", "panel users with username and passwords seperated by tilde(~) and for each user seperated by comma(,)")
 	UserFile = flag.String("userfile", "test/user_data.json", "track the users of the server")
 	ConfigFile = flag.String("configfile", "test/server.json", "config file of the v2ray proxy server")
 	GotifyServer = flag.String("gotifyserver", "meet.htetmyatthar.me:8080", "push nofication server domain name")
 	gotifyAPIKeys = flag.String("gotifyapikeys", "somekey,somekey", "keys for using with push notification system seperated by comma(,)")
 	SessionDuration = flag.Int("sessionduration", 10, "loggedin session remembered duration in minutes")
 	LockOutDuration = flag.Int("lockoutduration", 30, "locking out time for wrong password in minutes")
+	versionFlag := flag.Bool("version", false, "Show verion number.")
 
 	// parse the flags
 	flag.Parse()
+
+	// Check if the version flag was set
+	if *versionFlag {
+		fmt.Printf("LoThone V2ray VPN server Panel.%s\nVmess protocol.\n", Version)
+		os.Exit(0) // Exit after showing the version
+	}
 
 	GotifyAPIKeys = strings.Split(*gotifyAPIKeys, ",")
 	CsrfSecret = "a1b2c3d4e5f60708192a3b4c5d6e7f80"
@@ -142,7 +154,7 @@ func InitTemplates() map[string]*template.Template {
 }
 
 // Initialize templates from embedded filesystem
-func InitEmbedTemplates() (*template.Template, map[string]*template.Template){
+func InitEmbedTemplates() (*template.Template, map[string]*template.Template) {
 	// Initialize template maps
 	templates := make(map[string]*template.Template)
 
