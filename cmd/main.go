@@ -44,9 +44,6 @@ var (
 )
 
 func init() {
-	// Store the hash only.
-	*AdminPw, _, _ = utils.HashPassword(*AdminPw)
-
 	// gets the new mem session store.
 	sessionStore = d.NewMemSessionStore()
 
@@ -69,7 +66,7 @@ func main() {
 	// if not don't run and roll back to the back up file.
 
 	// static file server
-	muxHTTPS.Handle("GET /static/", http.StripPrefix("/static/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	muxHTTPS.Handle("GET /static/"+Version+"/", http.StripPrefix("/static/"+Version+"/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Set appropriate content type headers
 		ext := filepath.Ext(r.URL.Path)
 		switch ext {
@@ -112,7 +109,7 @@ func main() {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		fmt.Printf("HTTPS Server started on http://%s%s\nMemory Usage: %d bytes\n", *WebHost, *WebPort, utils.GetMemoryUsage())
+		fmt.Printf("HTTPS Server started on https://%s%s\nMemory Usage: %d bytes\n", *WebHost, *WebPort, utils.GetMemoryUsage())
 		err := serverHTTPS.ListenAndServeTLS(*WebCert, *WebKey)
 		if err != nil {
 			if !errors.Is(err, http.ErrServerClosed) {
