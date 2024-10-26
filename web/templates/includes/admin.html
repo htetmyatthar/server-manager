@@ -1,8 +1,10 @@
 {{ define "title"}} Server Manager: admin {{ end }}
 
 {{ define "sources"}} 
-	<link rel="stylesheet" type="text/css" href="/static/css/admin.css">
-	<script type="text/javascript" defer src="/static/javascript/admin.js"></script>
+	<link rel="stylesheet" type="text/css" href="/static/v0.2.0-beta/css/admin.css">
+	<script type="text/javascript" defer src="/static/v0.2.0-beta/javascript/admin.js"></script>
+	<link rel="preload" href="/static/v0.2.0-beta/javascript/dashboard.js" as="script">
+	<link rel="preload" href="/static/v0.2.0-beta/javascript/qrcode.min.js" as="script">
 {{ end }}
 
 {{ define "header" }}{{ end }}
