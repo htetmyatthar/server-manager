@@ -60,6 +60,9 @@ var (
 
 	ErrWrongPassword = errors.New("Wrong password")
 	ErrUserLockedOut = errors.New("User is locked out")
+
+	// Init the panel users
+	PanelUsers = InitPanelUsers(*config.Admins)
 )
 
 // CAUTION: Before calling this function always ensure to provided the status code with w.WriteHeader().
@@ -572,4 +575,22 @@ func SendNoti(gotifyServer, appToken, title, message string, priority int) error
 	}
 
 	return nil
+}
+
+// InitPanelUsers returns the panel users map that each username maps to each password which is hashed already.
+// Each user should be seperated by comma(,).
+// Username and password of each user should be seperated by tilde(~).
+func InitPanelUsers(string) map[string]string {
+	users := make(map[string]string)
+	admins := strings.Split(*Admins, ",")
+	for _, admin := range admins {
+		info := strings.Split(admin, "~")
+		// maps the username to the hashed password.
+		password, _, err := HashPassword(info[1])
+		if err != nil {
+			panic("Can't hash the user passwords. Please check panel username and passwords.")
+		}
+		users[info[0]] = password
+	}
+	return users
 }
