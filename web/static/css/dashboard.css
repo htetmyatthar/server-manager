@@ -233,6 +233,14 @@ main {
 	}
 }
 
+.restart_form {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 10px;
+	padding: 10px;
+}
+
 .modal::backdrop {
 	background: rgb(0 0 0 / 0.4);
 }
@@ -241,13 +249,17 @@ main {
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
-	align-items: flex-start;
+	align-items: center;
 	gap: 10px;
 
 	input {
 		padding: 10px;
 		max-width: 210px;
 	}
+}
+
+.modal__items > :first-child{
+	align-self: flex-start;
 }
 
 .modal__heading {
