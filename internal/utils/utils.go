@@ -62,7 +62,7 @@ var (
 	ErrUserLockedOut = errors.New("User is locked out")
 
 	// Init the panel users
-	PanelUsers = InitPanelUsers(*config.Admins)
+	PanelUsers = InitPanelUsers(*Admins)
 )
 
 // CAUTION: Before calling this function always ensure to provided the status code with w.WriteHeader().
