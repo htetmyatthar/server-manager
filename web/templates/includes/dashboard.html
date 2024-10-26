@@ -1,11 +1,11 @@
 {{ define "title"}} Server Manager: dashboard {{ end }}
 
 {{ define "sources"}} 
-    <link rel="stylesheet" type="text/css" href="/static/css/dashboard.css">
+    <link rel="stylesheet" type="text/css" href="/static/v0.2.0-beta/css/dashboard.css">
     <!-- Load QRCode library with SVG support first -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js" defer></script>
+    <script type="text/javascript" src="/static/v0.2.0-beta/javascript/qrcode.min.js" defer></script>
     <!-- Then load your dashboard script -->
-    <script type="text/javascript" defer src="/static/javascript/dashboard2.js"></script>
+    <script type="text/javascript" src="/static/v0.2.0-beta/javascript/dashboard.js" defer></script>
 {{ end }}
 
 {{ define "header" }}{{ end }}
@@ -110,8 +110,9 @@
 					</button>
 				</div>
 				<div class="modal__items">
-					<p>This will take a second.</p>
-					<form class="modalForm" id="restartForm">
+					<span>This will take a second.</span>
+					<form class="modalForm restart_form" id="restartForm">
+						<input id="adminUsername" placeholder="admin username" name="adminUsername" type="text" required>
 						<input id="adminPassword" placeholder="admin password" name="adminPassword" type="password" required>
 						<input hidden id="CSRFToken" type="hidden" name="{{ .CSRFTokenName }}" value="{{ .CSRFToken }}">
 					</form>
@@ -138,16 +139,16 @@
 						<input id="formExpireDate" type="date" name="expireDate" required>
 					</div>
 					<div>
-						<input type="text" name="username" placeholder="username" required>
+						<input id="usernameInput" type="text" name="username" placeholder="username" required>
 					</div>
 					<div>
-						<input type="text" name="deviceUUID" placeholder="device uuid" required>
+						<input id="deviceUUID" type="text" name="deviceUUID" placeholder="device uuid" value="00000000-0000-0000-0000-000000000000" required>
 					</div>
 					<div>
 						<input id="serverUUID" type="text" name="serverUUID" placeholder="server uuid" required>
 					</div>
 					<div class="buttons">
-						<button type="button" id="uuidGenerateButton" class="button"> Generate server uuid</button>
+						<button type="button" id="uuidManualButton" class="button">Add uuid manually</button>
 						<button type="submit" class="button">Create</button>
 					</div>
 				</form>
