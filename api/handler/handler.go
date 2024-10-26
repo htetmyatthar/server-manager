@@ -108,13 +108,13 @@ func AdminLoginPOST(sessionStore data.SessionStore, userLocker *utils.LockedOutR
 			return
 		}
 
-		if username != *config.Admin {
+		if _, ok := utils.PanelUsers[username]; !ok {
 			log.Println("Attempt with wrong username.")
 			utils.RenderError(w, "Unauthorized.", http.StatusUnauthorized)
 			return
 		}
 
-		correct, err := utils.VerifyPassword(password, *config.AdminPw)
+		correct, err := utils.VerifyPassword(password, utils.PanelUsers[username])
 		// handle hashing errors.
 		if err != nil && err != utils.ErrWrongPassword {
 			log.Println("verifying user password gone wrong.", err)
@@ -154,7 +154,7 @@ func AdminLoginPOST(sessionStore data.SessionStore, userLocker *utils.LockedOutR
 
 		// send a notification to the gotify server.
 		title := *config.WebHost + " - " + username + " logged in"
-		message := username + " logged into "+ *config.WebHostIP + " using " + ip
+		message := username + " logged into " + *config.WebHostIP + " using " + ip
 		for _, key := range config.GotifyAPIKeys {
 			utils.SendNoti(*config.GotifyServer, key, title, message, 9)
 		}
@@ -508,6 +508,7 @@ func ServerIPHandlerGET(w http.ResponseWriter, r *http.Request) {
 
 // Request body structure
 type RestartRequest struct {
+	AdminUsername string `json:"adminUsername"`
 	AdminPassword string `json:"adminPassword"`
 }
 
@@ -521,18 +522,20 @@ func ServerRestartPOST(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	password, _, err := utils.HashPassword(restartRequest.AdminPassword)
-	if err != nil {
-		log.Println("password hashing gone wrong.")
-		utils.JSONRespondError(w, http.StatusInternalServerError, "Internal server error.")
+	if _, ok := utils.PanelUsers[restartRequest.AdminUsername]; !ok {
+		log.Println("Attempt with wrong username.")
+		utils.JSONRespondError(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
-	if password != *config.AdminPw {
+	_, err = utils.VerifyPassword(restartRequest.AdminPassword, utils.PanelUsers[restartRequest.AdminUsername])
+	if err != nil {
 		utils.JSONRespondError(w, http.StatusUnauthorized, "Unauthorized")
-		log.Println("someone tries to restart the server with this password.", restartRequest.AdminPassword, "correct: ", *config.AdminPw)
+		log.Println("someone tries to restart the server with this password.", restartRequest.AdminPassword)
 		return
 	}
+
+	// TODO: make the rate limit for each panel user and lock out the user for the wrong password.
 
 	err = utils.ValidateConfig()
 	if err != nil {
