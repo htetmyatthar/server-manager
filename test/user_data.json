@@ -1,3 +1,12 @@
 {
- "clients": []
+ "clients": [
+  {
+   "id": "62f6c220-3da1-4d7f-928e-0971f1eaa250",
+   "alterId": 1,
+   "username": "test/admin",
+   "deviceId": "00000000-0000-0000-0000-000000000000",
+   "startDate": "2024-10-30",
+   "expireDate": "2024-10-31"
+  }
+ ]
 }
