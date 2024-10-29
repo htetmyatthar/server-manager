@@ -44,6 +44,53 @@ main {
 	gap: 10px;
 }
 
+#searchInputContainer {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	margin-bottom: 1.5rem;
+	padding: 0.5rem;
+	background: #F8FAFC;
+	border-radius: 6px;
+	border: 1px solid #E2E8F0;
+}
+
+#searchInputContainer label {
+	font-weight: 500;
+	color: #475569;
+}
+
+#searchInput {
+	flex: 1;
+	padding: 0.75rem;
+	border: 1px solid #E2E8F0;
+	border-radius: 4px;
+	background: white;
+	color: #1E293B;
+	font-size: 0.95rem;
+	transition: all 0.2s ease;
+}
+
+#searchInput::placeholder {
+	color: #94A3B8;
+}
+
+#searchInput:focus {
+	outline: none;
+	border-color: #2196F3;
+	box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+}
+
+#searchInput:hover {
+	border-color: #CBD5E1;
+}
+
+/* Style for the datalist dropdown */
+input::-webkit-calendar-picker-indicator {
+	opacity: 0.4;
+	cursor: pointer;
+}
+
 .table {
 	height: 100%;
 	width: auto;
@@ -62,13 +109,21 @@ main {
 		#userRefreshBtn {
 			display: inline-block;
 			border: none;
-			border-radius: 50%;
+			border-radius: 4px;
+			padding: 5px;
+			color: #0D47A1;
+			background: #E8F4FD;
+			border: 1px solid #2196F3;
 
 			svg {
-				fill: white;
+				fill: #0D47A1;
 				width: 20px;
 				height: 20px;
 			}
+		}
+
+		#userRefreshBtn:hover {
+			background: #BBE1FB;
 		}
 
 		#userRefreshBtn:active {
@@ -93,8 +148,15 @@ main {
 
 	.copyBtn {
 		width: 50%;
-		color: white;
-		background-color: #2A628F;
+		padding: 5px;
+		border-radius: 4px;
+		color: #00695C;
+		background: #E8F8F5;
+		border: 1px solid #009688;
+	}
+
+	.copyBtn:hover {
+		background: #B2DFDB;
 	}
 
 	.copyBtn:active {
@@ -105,6 +167,16 @@ main {
 	th,
 	td {
 		padding: .5rem;
+	}
+
+	.actions {
+		display: flex;
+		width: 100%;
+		justify-content: space-between;
+	}
+
+	.actions svg {
+		width: 30px;
 	}
 
 	th {
@@ -162,14 +234,21 @@ main {
 
 .button {
 	padding: 10px;
-	background-color: #2A628F;
-	color: whitesmoke;
+	border-radius: 4px;
+	color: #0D47A1;
+	background: #E8F4FD;
+	border: 1px solid #2196F3;
+}
+
+.button:hover {
+	background: #BBE1FB;
 }
 
 .button:active {
 	box-shadow: 0 2px gray;
 	transform: translateY(2px);
 }
+
 
 .serverInfo {
 	display: flex;
@@ -181,19 +260,27 @@ main {
 	#serverIPRefreshBtn {
 		display: inline-block;
 		border: none;
-		border-radius: 50%;
-
-		svg {
-			fill: white;
-			width: 20px;
-			height: 20px;
-		}
+		border-radius: 4px;
+		padding: 5px;
+		color: #0D47A1;
+		background: #E8F4FD;
+		border: 1px solid #2196F3;
 	}
 
-	#serverIPRefreshBtn:active {
-		box-shadow: 0 2px gray;
-		transform: translateY(2px);
+	#serverIPRefreshBtn:hover {
+		background: #BBE1FB;
 	}
+
+	svg {
+		fill: #0D47A1;
+		width: 20px;
+		height: 20px;
+	}
+}
+
+#serverIPRefreshBtn:active {
+	box-shadow: 0 2px gray;
+	transform: translateY(2px);
 }
 
 .modal {
@@ -213,27 +300,43 @@ main {
 		justify-content: space-around;
 		gap: 10px;
 
-		#serverRestartBtn {
+		button {
 			width: 100px;
 		}
 
 		.closeModalBtn {
 			background-color: #d11a2a;
 			width: 100px;
+			padding: 5px;
+			border-radius: 4px;
+			color: white;
+			border: 1px solid #FF5252;
 		}
 
-	}
-
-	.closeModalBtn:active {
-		transform: translateY(2px);
-	}
-
-	&>* {
-		margin: 0 0 0.5rem 0;
+		.closeModalBtn:hover {
+			background: #FFCDD2;
+			color: #D32F2F;
+		}
 	}
 }
 
+.closeModalBtn:active {
+	transform: translateY(2px);
+}
+
+&>* {
+	margin: 0 0 0.5rem 0;
+}
+
 .restart_form {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 10px;
+	padding: 10px;
+}
+
+#userDeleteForm {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -258,7 +361,7 @@ main {
 	}
 }
 
-.modal__items > :first-child{
+.modal__items> :first-child {
 	align-self: flex-start;
 }
 
@@ -282,10 +385,7 @@ main {
 
 }
 
-.create_container,
-.delete_container,
-.unlocked_container,
-.locked_container {
+.create_container {
 	display: flex;
 	justify-content: center;
 	align-items: center;
@@ -343,6 +443,10 @@ main {
 
 /*this took the precedence of .modal*/
 #qrModal {
+	.modal__heading{
+		margin-bottom: 10px;
+	}
+
 	width: 100%;
 	max-width: 400px;
 
@@ -360,31 +464,12 @@ main {
 
 	}
 
-	#buttonContainer {
+	.downloadBtnContainer {
 		display: flex;
 		justify-content: center;
-		align-items: center;
-
-		#closeQrModalBtn {
-			margin-top: 10px;
-		}
+		width: 100%;
+		margin-top: 10px;
 	}
-
-}
-
-.qrForm_container {
-	width: 100%;
-	display: flex;
-	flex-direction: row;
-	justify-content: center;
-	align-items: center;
-	gap: 10px;
-}
-
-.unlocked_container,
-.locked_container {
-	width: 100%;
-	max-width: 270px;
 }
 
 footer {
@@ -407,12 +492,58 @@ footer {
 	}
 }
 
+.action-btn {
+	padding: 5px;
+	border-radius: 4px;
+}
+
+.edit-btn {
+	color: #0D47A1;
+	background: #E8F4FD;
+	border: 1px solid #2196F3;
+}
+
+.edit-btn:hover {
+	background: #BBE1FB;
+}
+
+.qr-btn {
+	color: #00695C;
+	background: #E8F8F5;
+	border: 1px solid #009688;
+}
+
+.qr-btn:hover {
+	background: #B2DFDB;
+}
+
+.delete-btn {
+	color: #D32F2F;
+	background: #FFF3F3;
+	border: 1px solid #FF5252;
+}
+
+.delete-btn:hover {
+	background: #FFCDD2;
+}
+
+.actions-container {
+	position: relative;
+}
+
+.actions {
+	display: flex;
+	gap: 10px;
+}
+
+.show-actions-btn {
+	display: none;
+}
 
 /* for the tablet size */
 @media (max-width: 700px) {
 	table {
 		font-size: 1.2rem;
-
 	}
 
 	.table {
@@ -424,9 +555,7 @@ footer {
 			box-shadow: 0 2px gray;
 			transform: translateY(2px);
 		}
-
 	}
-
 
 	th {
 		display: none;
@@ -436,7 +565,98 @@ footer {
 		display: block;
 	}
 
-	td::before {
+	/* Show actions button styling */
+	.show-actions-btn {
+		display: flex;
+		width: 100%;
+		padding: 0.5rem;
+		justify-content: space-between;
+		align-items: center;
+		background: #EEF2FF;
+		/* Light indigo background */
+		border: 1px solid #6366F1;
+		/* Indigo border */
+		border-radius: 4px;
+		color: #4F46E5;
+		/* Darker indigo text */
+		font-weight: 500;
+	}
+
+	.show-actions-btn:hover {
+		background: #E0E7FF;
+		/* Slightly darker on hover */
+	}
+
+	.show-actions-btn.active {
+		background: #E0E7FF;
+		/* Same as hover state */
+		border-color: #4F46E5;
+		/* Darker border when active */
+	}
+
+	.show-actions-btn svg {
+		width: 20px;
+		transition: transform 0.3s ease;
+		/* Tint the chevron icon to match the text color */
+		filter: invert(27%) sepia(51%) saturate(4917%) hue-rotate(229deg) brightness(101%) contrast(95%);
+	}
+
+	.show-actions-btn.active svg {
+		transform: rotate(180deg);
+	}
+
+	/* Actions container and animation */
+	.actions-container {
+		position: relative;
+	}
+
+	.actions {
+		position: absolute;
+		top: calc(100% + 5px);
+		left: 0;
+		right: 0;
+		flex-direction: column;
+		gap: 10px;
+		padding: 0.5rem;
+		background: white;
+		border: 1px solid #ddd;
+		border-radius: 4px;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+		/* Hidden by default */
+		opacity: 0;
+		visibility: hidden;
+		transform: translateY(-10px);
+		transition: all 0.3s ease;
+		z-index: 10;
+	}
+
+	.actions.show {
+		opacity: 1;
+		visibility: visible;
+		transform: translateY(0);
+	}
+
+	.action-btn {
+		width: 100%;
+		padding: 10px;
+		border-radius: 4px;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+
+	.action-btn::before {
+		content: attr(data-buttonValue);
+		font-weight: 500;
+	}
+
+	.action-btn svg {
+		width: 24px;
+		margin-left: auto;
+	}
+
+	td:not([data-cell="Actions"])::before {
 		content: attr(data-cell) ": ";
 		font-weight: 500;
 		text-transform: capitalize;
@@ -452,6 +672,16 @@ footer {
 
 	main {
 		flex-direction: column-reverse;
+	}
+
+	#searchInputContainer {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.5rem;
+	}
+
+	#searchInput {
+		width: 100%;
 	}
 
 	footer {
