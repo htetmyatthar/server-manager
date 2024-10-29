@@ -14,6 +14,11 @@ import (
 	"github.com/htetmyatthar/server-manager/internal/utils"
 )
 
+// added easter egg
+func Hello(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Hello LoTone users.")	
+}
+
 func RedirectToHTTPSHandler(w http.ResponseWriter, r *http.Request) {
 	url := "https://" + *config.WebHost + *config.WebPort + r.RequestURI
 	http.Redirect(w, r, url, http.StatusMovedPermanently)
@@ -564,4 +569,9 @@ func ServerRestartPOST(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.JSONRespond(w, http.StatusOK, "V2ray service restarted successfully.")
+}
+
+func AccountEditPUT(w http.ResponseWriter, r *http.Request) {
+	// TODO: implement editing user account.
+	// only the json?
 }
