@@ -215,33 +215,228 @@ class QRGenerator {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+	// Close all action menus when clicking outside
+	document.addEventListener('click', function(e) {
+		if (!e.target.closest('.actions-container')) {
+			const allActions = document.querySelectorAll('.actions');
+			const allButtons = document.querySelectorAll('.show-actions-btn');
+			allActions.forEach(actions => actions.classList.remove('show'));
+			allButtons.forEach(button => button.classList.remove('active'));
+		}
+	});
+
+	// Toggle action menu
+	const showActionButtons = document.querySelectorAll('.show-actions-btn');
+	showActionButtons.forEach(button => {
+		button.addEventListener('click', function(e) {
+			e.stopPropagation();
+
+			// Close all other action menus
+			const allActions = document.querySelectorAll('.actions');
+			const allButtons = document.querySelectorAll('.show-actions-btn');
+			allActions.forEach(actions => {
+				if (actions !== this.nextElementSibling) {
+					actions.classList.remove('show');
+				}
+			});
+			allButtons.forEach(btn => {
+				if (btn !== this) {
+					btn.classList.remove('active');
+				}
+			});
+
+			// Toggle current action menu
+			const actionsMenu = this.nextElementSibling;
+			actionsMenu.classList.toggle('show');
+			this.classList.toggle('active');
+		});
+	});
+
+	// restart server modal
 	const reStartModal = new Modal("#modal", "#serverRestartModalBtn", ".closeModalBtn", "#serverRestartBtn");
-	new Modal("#qrModal", ".qrBtn", ".closeModalBtn", ".closeModalBtn");
+
+	// qr display modal
+	const qrModal = new Modal("#qrModal", ".qrBtn", ".closeModalBtn", ".closeModalBtn");
+
+	// delete user modal
+	const deleteUserModal = new Modal("#deleteUserModal", "#deleteUserModalBtn", ".closeModalBtn");
+
+	// qr type choose modal
+	const generateQRUserModal = new Modal("#generateUserQRModal", "#qrUserNumber", ".closeModalBtn");
+
 	const server = new Server();
 	const qrGenerator = new QRGenerator();
+	const today = new Date();
+	today.setDate(today.getDate());
 
-	const today = new Date(); // Get the current date
-	today.setDate(today.getDate() + 1); // Add one day
-
-	// Set the input's valueAsDate to the new date (one day ahead)
+	// default value start date.
 	const dateInput = document.getElementById("formStartDate");
 	dateInput.valueAsDate = today;
 
+	// qr code generations logic
+	const handleQRButtonClick = async (event) => {
+		const button = event.target;
+		const userNumber = document.getElementById("qrUserNumber").dataset.value;
+		if (userNumber === "") {
+			console.log("Error trying to find the qrUserNumber.")
+			return;
+		}
+
+		let generateURIFunc;
+		let isLocked = true;
+		if (button.classList.contains("open")) {
+			isLocked = false;
+			generateURIFunc = generateURI;
+		} else {
+			generateURIFunc = generateLockedURI;
+		}
+
+		// convert data-value and userNumber to the same type
+		const userRow = Array.from(document.querySelectorAll('.user-table tbody tr')).find(row => {
+			const rowNumber = row.cells[0].dataset.value.trim(); // Make sure there are no spaces
+			return rowNumber === userNumber; // Compare as strings
+		});
+
+		// the user row will be definitely found.
+		const qrData = new QRInfo(
+			userRow.cells[0].dataset.value,
+			userRow.cells[1].innerText,
+			userRow.cells[2].innerText,
+			userRow.cells[3].innerText,
+			userRow.cells[5].innerText,
+		);
+		await qrGenerator.generateQR(qrData, generateURIFunc, isLocked);
+		qrModal.open();
+	};
+
+	// opened qr code generation handler
+	document.querySelector("#openQRBtn").addEventListener("click", (event) => {
+		generateQRUserModal.close();
+		handleQRButtonClick(event);
+	})
+
+	// locked qr code generation handler
+	document.querySelector("#deviceLockedQRBtn").addEventListener("click", (event) => {
+		generateQRUserModal.close();
+		handleQRButtonClick(event);
+	})
+
+	// user edit buttons handler
+	document.querySelectorAll(".editBtn").forEach((button) => {
+		button.addEventListener("click", () => {
+			alert("Feature is not supported yet.")
+		})
+	})
+
+	// generate qr buttons handler
+	document.querySelectorAll(".generateQRBtn").forEach((button) => {
+		button.addEventListener("click", () => {
+			const row = button.closest("tr");
+			const numberCell = row.querySelector("[data-cell='Number']");
+			const userNumber = numberCell ? numberCell.dataset.value : "not found";
+			document.querySelector("#qrUserNumber").dataset.value = userNumber;
+			// open the modal to start deleting the user.
+			generateQRUserModal.open();
+		});
+	});
+
+	// user delete buttons handler
+	document.querySelectorAll(".deleteBtn").forEach((button) => {
+		button.addEventListener("click", () => {
+			const row = button.closest("tr");
+			const numberCell = row.querySelector("[data-cell='Number']");
+			const UUIDCell = row.querySelector("[data-cell='Server UUID']");
+			const usernameCell = row.querySelector("[data-cell='Username']");
+
+			const userNumber = numberCell ? numberCell.dataset.value : "not found";
+			const serverUUID = UUIDCell ? UUIDCell.dataset.value : "not found";
+			const username = usernameCell ? usernameCell.dataset.value : "not found";
+
+			document.querySelector("#userToBeDeleted").innerHTML = username;	// user
+			document.querySelector("#userNumberToBeDeleted").value = userNumber;	// usernumber
+
+			// uuid
+			const serverUUIDInput = document.querySelector("#serverUUIDToBeDeleted")
+			serverUUIDInput.dataset.check = serverUUID;
+			serverUUIDInput.placeholder = serverUUID.slice(-4);
+
+			// username
+			const usernameInput = document.querySelector("#usernameToBeDeleted");
+			usernameInput.dataset.check = username;
+			usernameInput.placeholder = username;
+			// open the delete user modal
+			deleteUserModal.open();
+		})
+	})
+
+
+	// user delete confirm form handler
+	document.getElementById("deleteUserModalBtn").addEventListener('click', async () => {
+		const form = document.querySelector("#userDeleteForm");
+		const usernameInput = document.getElementById("usernameToBeDeleted");
+		const serverUUIDInput = document.getElementById("serverUUIDToBeDeleted");
+
+		// check for empty inputs. 
+		if (serverUUIDInput.value === "" || usernameInput.value === "") {
+			alert("You type in the wrong last 4 digits of server UUID.")
+			deleteUserModal.close();
+			return
+		}
+
+		// server id input check and replace if correct.
+		if (serverUUIDInput.value !== serverUUIDInput.dataset.check.slice(-4)) {
+			alert("You type in the wrong last 4 digits of server UUID.")
+			deleteUserModal.close();
+			return
+		} else {
+			serverUUIDInput.value = serverUUIDInput.dataset.check;
+		}
+
+		// username input check
+		if (usernameInput.value !== usernameInput.dataset.check) {
+			alert("You type in the wrong username.")
+			deleteUserModal.close();
+			return
+		}
+		form.submit();
+		deleteUserModal.close();
+	});
+
+
+	// search box handler
+	document.getElementById("searchInput").addEventListener("keyup", function() {
+		const filter = this.value.toLowerCase();
+		const rows = document.querySelectorAll("#userTable tbody tr");
+
+		rows.forEach(row => {
+			const cells = row.querySelectorAll("td");
+			const match = Array.from(cells).slice(0, -1).some(cell =>
+				cell.textContent.toLowerCase().includes(filter)
+			);
+			row.style.display = match ? "" : "none";
+		});
+	});
+
+	// manually adding uuid button handler
 	document.getElementById("uuidManualButton").addEventListener("click", () => {
 		document.querySelector("#serverUUID").value = "";
 		document.querySelector("#deviceUUID").value = "";
 	});
 
+	// auto generate server uuid when username is inputted.
 	document.getElementById("usernameInput").addEventListener("input", () => {
 		if (usernameInput.value.trim() !== "") {
 			document.querySelector("#serverUUID").value = generateUUID();
 		}
 	});
 
+	// server ip refresh button handler.
 	document.getElementById("serverIPRefreshBtn").addEventListener("click", () => server.refreshIP());
 
+	// user list refresh button handler.
 	document.getElementById("userRefreshBtn").addEventListener("click", () => window.location.reload());
 
+	// server restart button handler
 	document.getElementById("serverRestartBtn").addEventListener('click', async (event) => {
 		event.preventDefault();
 		const adminPassword = document.getElementById("adminPassword").value;
@@ -250,18 +445,21 @@ document.addEventListener("DOMContentLoaded", () => {
 			reStartModal.close();
 			return
 		}
+
 		const adminUsername = document.getElementById("adminUsername").value;
 		if (adminUsername === "") {
 			alert("Username required!")
 			reStartModal.close();
 			return
 		}
+
 		const token = document.getElementById("CSRFToken").value;
 		await server.restartServer(adminUsername, adminPassword, token);
 		reStartModal.close();
 	});
 
-	document.getElementById("closeQrModalBtn").addEventListener("click", async () => {
+	// download qr button handler
+	document.getElementById("downloadQRBtn").addEventListener("click", async () => {
 		try {
 			if (document.getElementById("qrCode").innerHTML) {
 				await qrGenerator.downloadQR();  // Wait for download to complete
@@ -273,6 +471,14 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	});
 
+	// close qr modal button handler
+	document.getElementById("closeQrModalBtn").addEventListener("click", async () => {
+		if (document.getElementById("qrCode").innerHTML) {
+			qrGenerator.cleanQR();  // Clean up only after done
+		}
+	})
+
+	// copy config button handler
 	document.querySelectorAll(".copyBtn").forEach((copyBtn) => {
 		copyBtn.addEventListener("click", () => {
 			const row = copyBtn.closest("tr");
@@ -292,58 +498,12 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 	});
 
-	const handleQRButtonSubmit = async (event) => {
-		event.preventDefault();
 
-		const form = event.target;
-		let userNumber = form.elements["qrUserNumber"].value;
-
-		if (userNumber === "") {
-			alert("Please enter user number.");
-			return;
-		}
-
-		// Convert userNumber to string or integer based on how it's stored in data-value
-		userNumber = userNumber.trim(); // If data-value is string, trim any extra spaces
-
-		let generateURIFunc;
-		let isLocked = true;
-		if (form.classList.contains("open")) {
-			isLocked = false;
-			generateURIFunc = generateURI;
-		} else {
-			generateURIFunc = generateLockedURI;
-		}
-
-		// Convert data-value and userNumber to the same type
-		const userRow = Array.from(document.querySelectorAll('.user-table tbody tr')).find(row => {
-			const rowNumber = row.cells[0].dataset.value.trim(); // Make sure there are no spaces
-			return rowNumber === userNumber; // Compare as strings
-		});
-
-		if (userRow) {
-			const qrData = new QRInfo(
-				userRow.cells[0].dataset.value,
-				userRow.cells[1].innerText,
-				userRow.cells[2].innerText,
-				userRow.cells[3].innerText,
-				userRow.cells[5].innerText,
-			);
-			await qrGenerator.generateQR(qrData, generateURIFunc, isLocked);
-		} else {
-			alert("User number not found.");
-		}
-	};
-
-	// Attach event listeners
-	document.querySelectorAll(".qrForm").forEach((form) => {
-		form.addEventListener("submit", handleQRButtonSubmit);
-	});
 });
 
 function generateURI(qrData) {
 	const prefix = "vmess://";
-	const address = window.location.hostname; // Hardcoded for simplicity, consider making it configurable
+	const address = window.location.hostname;
 	const subDomain = address.split(".")[0];
 	const port = document.getElementById("v2rayServerPort").dataset.port;
 
