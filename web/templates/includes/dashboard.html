@@ -1,11 +1,22 @@
 {{ define "title"}} Server Manager: dashboard {{ end }}
 
 {{ define "sources"}}
-<link rel="stylesheet" type="text/css" href="/static/v0.2.0-beta/css/dashboard.css">
-<!-- Load QRCode library with SVG support first -->
-<script type="text/javascript" src="/static/v0.2.0-beta/javascript/qrcode.min.js" defer></script>
-<!-- Then load your dashboard script -->
-<script type="text/javascript" src="/static/v0.2.0-beta/javascript/dashboard.js" defer></script>
+<!-- style -->
+<link rel="preload" type="text/css" href="/static/v0.3.1-beta/css/dashboard.css" as="style">
+
+<!-- svg images -->
+<link rel="preload" href="/static/v0.3.1-beta/images/refresh_button.svg" as="image" type="image/svg+xml">
+<link rel="preload" href="/static/v0.3.1-beta/images/chevron_down.svg" as="image" type="image/svg+xml">
+<link rel="preload" href="/static/v0.3.1-beta/images/edit_button.svg" as="image" type="image/svg+xml">
+<link rel="preload" href="/static/v0.3.1-beta/images/qr_button.svg" as="image" type="image/svg+xml">
+<link rel="preload" href="/static/v0.3.1-beta/images/trash_bin_button.svg" as="image" type="image/svg+xml">
+<link rel="preload" href="/static/v0.3.1-beta/images/cancel_cross.svg" as="image" type="image/svg+xml">
+<link rel="preload" href="/static/v0.3.1-beta/images/lothone3.png" as="image" type="image/png">
+
+<link rel="stylesheet" type="text/css" href="/static/v0.3.1-beta/css/dashboard.css">
+<link rel="icon" type="image/png" href="/static/v0.3.1-beta/images/lothone.png">
+<script type="text/javascript" src="/static/v0.3.1-beta/javascript/qrcode.min.js" defer></script>
+<script type="text/javascript" src="/static/v0.3.1-beta/javascript/dashboard.js" defer></script>
 {{ end }}
 
 {{ define "header" }}{{ end }}
@@ -16,15 +27,7 @@
 		<div class="users__heading">
 			<h1>Users List</h1>
 			<button id="userRefreshBtn" class="button" title="click to refresh">
-				<svg fill="#000000" viewBox="0 0 489.645 489.645" xml:space="preserve">
-					<g>
-						<path d="M460.656,132.911c-58.7-122.1-212.2-166.5-331.8-104.1c-9.4,5.2-13.5,16.6-8.3,27c5.2,9.4,16.6,13.5,27,8.3
-							c99.9-52,227.4-14.9,276.7,86.3c65.4,134.3-19,236.7-87.4,274.6c-93.1,51.7-211.2,17.4-267.6-70.7l69.3,14.5
-							c10.4,2.1,21.8-4.2,23.9-15.6c2.1-10.4-4.2-21.8-15.6-23.9l-122.8-25c-20.6-2-25,16.6-23.9,22.9l15.6,123.8
-							c1,10.4,9.4,17.7,19.8,17.7c12.8,0,20.8-12.5,19.8-23.9l-6-50.5c57.4,70.8,170.3,131.2,307.4,68.2
-							C414.856,432.511,548.256,314.811,460.656,132.911z" />
-					</g>
-				</svg>
+				<img src="/static/v0.3.1-beta/images/refresh_button.svg" alt="">
 			</button>
 		</div>
 		<div id="searchInputContainer">
@@ -58,72 +61,32 @@
 						</button>
 					</td>
 					<td data-cell="Username" data-value="{{ $client.Username }}">{{ $client.Username }}</td>
-					<td data-cell="Device UUID"><span class="wrap">{{ $client.DeviceId }}</span></td>
+					<td data-cell="Device UUID" data-value="{{ $client.DeviceId }}"><span class="wrap">{{
+							$client.DeviceId }}</span></td>
 					<td data-cell="Server UUID" data-value="{{ $client.Id }}"><span class="wrap">{{ $client.Id }}</span>
 					</td>
-					<td data-cell="Start date"><span class="nowrap">{{ $client.StartDate }}</span></td>
-					<td data-cell="Expire date"><span class="nowrap">{{ $client.ExpireDate }}</span></td>
+					<td data-cell="Start date" data-value="{{ $client.StartDate }}"><span class="nowrap">{{
+							$client.StartDate }}</span></td>
+					<td data-cell="Expire date" data-value="{{ $client.ExpireDate }}"><span class="nowrap">{{
+							$client.ExpireDate }}</span></td>
 					<td data-cell="Actions">
 						<div class="actions-container">
 							<button class="show-actions-btn" data-buttonValue="show actions">
 								Actions
-								<svg fill="#000000" version="1.1" id="Layer_1" viewBox="0 0 386.257 386.257"
-									xml:space="preserve">
-									<polygon points="0,96.879 193.129,289.379 386.257,96.879 " />
-								</svg>
+								<img src="/static/v0.3.1-beta/images/chevron_down.svg" alt="">
 							</button>
 							<div class="actions">
 								<button type="button" class="action-btn edit-btn editBtn" title="Edit User"
 									data-buttonValue="edit user">
-									<svg viewBox="0 0 24 24">
-										<g id="Complete">
-											<g id="edit">
-												<g>
-													<path d="M20,16v4a2,2,0,0,1-2,2H4a2,2,0,0,1-2-2V6A2,2,0,0,1,4,4H8"
-														fill="none" stroke="#0D47A1" stroke-linecap="round"
-														stroke-linejoin="round" stroke-width="2" />
-													<polygon fill="none"
-														points="12.5 15.8 22 6.2 17.8 2 8.3 11.5 8 16 12.5 15.8"
-														stroke="#0D47A1" stroke-linecap="round" stroke-linejoin="round"
-														stroke-width="2" />
-
-												</g>
-											</g>
-										</g>
-									</svg>
+									<img src="/static/v0.3.1-beta/images/edit_button.svg" alt="">
 								</button>
 								<button type="button" class="action-btn qr-btn generateQRBtn" title="Generate QR Code"
 									data-buttonValue="generate qr">
-									<svg viewBox="0 0 24 24" fill="none">
-										<path d="M12.38 3.88V10.88H19.38V3.88H12.38ZM17.88 9.38H13.88V5.38H17.88V9.38Z"
-											fill="#00695C" />
-										<path d="M3.88 10.88H10.88V3.88H3.88V10.88ZM5.38 5.38H9.38V9.38H5.38V5.38Z"
-											fill="#00695C" />
-										<path d="M3.88 19.38H10.88V12.38H3.88V19.38ZM5.38 13.88H9.38V17.88H5.38V13.88Z"
-											fill="#00695C" />
-										<path d="M14.13 12.38H12.38V14.13H14.13V12.38Z" fill="#00695C" />
-										<path d="M17.63 12.38H15.88V14.13H17.63V12.38Z" fill="#00695C" />
-										<path d="M15.88 14.13H14.13V15.88H15.88V14.13Z" fill="#00695C" />
-										<path d="M19.38 14.13H17.63V15.88H19.38V14.13Z" fill="#00695C" />
-										<path d="M14.13 15.88H12.38V17.63H14.13V15.88Z" fill="#00695C" />
-										<path d="M17.63 15.88H15.88V17.63H17.63V15.88Z" fill="#00695C" />
-										<path d="M15.88 17.63H14.13V19.38H15.88V17.63Z" fill="#00695C" />
-										<path d="M19.38 17.63H17.63V19.38H19.38V17.63Z" fill="#00695C" />
-									</svg>
+									<img src="/static/v0.3.1-beta/images/qr_button.svg" alt="">
 								</button>
 								<button type="button" class="action-btn delete-btn deleteBtn" title="Delete User"
 									data-buttonValue="delete user">
-									<svg fill="#FF2800" version="1.1" id="Capa_1" viewBox="0 0 41.336 41.336"
-										xml:space="preserve">
-										<g>
-											<path d="M36.335,5.668h-8.167V1.5c0-0.828-0.672-1.5-1.5-1.5h-12c-0.828,0-1.5,0.672-1.5,1.5v4.168H5.001c-1.104,0-2,0.896-2,2
-		s0.896,2,2,2h2.001v29.168c0,1.381,1.119,2.5,2.5,2.5h22.332c1.381,0,2.5-1.119,2.5-2.5V9.668h2.001c1.104,0,2-0.896,2-2
-		S37.438,5.668,36.335,5.668z M14.168,35.67c0,0.828-0.672,1.5-1.5,1.5s-1.5-0.672-1.5-1.5v-21c0-0.828,0.672-1.5,1.5-1.5
-		s1.5,0.672,1.5,1.5V35.67z M22.168,35.67c0,0.828-0.672,1.5-1.5,1.5s-1.5-0.672-1.5-1.5v-21c0-0.828,0.672-1.5,1.5-1.5
-		s1.5,0.672,1.5,1.5V35.67z M25.168,5.668h-9V3h9V5.668z M30.168,35.67c0,0.828-0.672,1.5-1.5,1.5s-1.5-0.672-1.5-1.5v-21
-		c0-0.828,0.672-1.5,1.5-1.5s1.5,0.672,1.5,1.5V35.67z" />
-										</g>
-									</svg>
+									<img src="/static/v0.3.1-beta/images/trash_bin_button.svg" alt="">
 								</button>
 							</div>
 						</div>
@@ -141,15 +104,7 @@
 			<div class="serverInfo">
 				<h2>Server Information</h2>
 				<button id="serverIPRefreshBtn" class="button" title="click to refresh">
-					<svg fill="#000000" viewBox="0 0 489.645 489.645" xml:space="preserve">
-						<g>
-							<path d="M460.656,132.911c-58.7-122.1-212.2-166.5-331.8-104.1c-9.4,5.2-13.5,16.6-8.3,27c5.2,9.4,16.6,13.5,27,8.3
-								c99.9-52,227.4-14.9,276.7,86.3c65.4,134.3-19,236.7-87.4,274.6c-93.1,51.7-211.2,17.4-267.6-70.7l69.3,14.5
-								c10.4,2.1,21.8-4.2,23.9-15.6c2.1-10.4-4.2-21.8-15.6-23.9l-122.8-25c-20.6-2-25,16.6-23.9,22.9l15.6,123.8
-								c1,10.4,9.4,17.7,19.8,17.7c12.8,0,20.8-12.5,19.8-23.9l-6-50.5c57.4,70.8,170.3,131.2,307.4,68.2
-								C414.856,432.511,548.256,314.811,460.656,132.911z" />
-						</g>
-					</svg>
+					<img src="/static/v0.3.1-beta/images/refresh_button.svg" alt="">
 				</button>
 			</div>
 			<table>
@@ -179,12 +134,7 @@
 				<div class="modal__heading">
 					<h3>Restart V2ray server</h3>
 					<button class="closeModalBtn">
-						<svg viewBox="0 0 64 64">
-							<path id="times"
-								d="M32.033,29.19l15.55,-15.55l2.863,2.863l-15.55,15.55l15.55,15.55l-2.863,2.863l-15.55,-15.55l-15.55,15.55l-2.863,-2.863l15.55,-15.55l-15.55,-15.55l2.863,-2.863l15.55,15.55Z" />
-							<path
-								d="M32.033,29.19l15.55,-15.55l2.863,2.863l-15.55,15.55l15.55,15.55l-2.863,2.863l-15.55,-15.55l-15.55,15.55l-2.863,-2.863l15.55,-15.55l-15.55,-15.55l2.863,-2.863l15.55,15.55Z" />
-						</svg>
+						<img src="/static/v0.3.1-beta/images/cancel_cross.svg" alt="">
 					</button>
 				</div>
 				<div class="modal__items">
@@ -210,12 +160,7 @@
 			<div class="modal__heading">
 				<h3>Delete user</h3>
 				<button class="closeModalBtn">
-					<svg viewBox="0 0 64 64">
-						<path id="times"
-							d="M32.033,29.19l15.55,-15.55l2.863,2.863l-15.55,15.55l15.55,15.55l-2.863,2.863l-15.55,-15.55l-15.55,15.55l-2.863,-2.863l15.55,-15.55l-15.55,-15.55l2.863,-2.863l15.55,15.55Z" />
-						<path
-							d="M32.033,29.19l15.55,-15.55l2.863,2.863l-15.55,15.55l15.55,15.55l-2.863,2.863l-15.55,-15.55l-15.55,15.55l-2.863,-2.863l15.55,-15.55l-15.55,-15.55l2.863,-2.863l15.55,15.55Z" />
-					</svg>
+					<img src="/static/v0.3.1-beta/images/cancel_cross.svg" alt="">
 				</button>
 			</div>
 			<div class="modal__items">
@@ -250,12 +195,7 @@
 			<div class="modal__heading">
 				<h3>Generate QR</h3>
 				<button class="closeModalBtn">
-					<svg viewBox="0 0 64 64">
-						<path id="times"
-							d="M32.033,29.19l15.55,-15.55l2.863,2.863l-15.55,15.55l15.55,15.55l-2.863,2.863l-15.55,-15.55l-15.55,15.55l-2.863,-2.863l15.55,-15.55l-15.55,-15.55l2.863,-2.863l15.55,15.55Z" />
-						<path
-							d="M32.033,29.19l15.55,-15.55l2.863,2.863l-15.55,15.55l15.55,15.55l-2.863,2.863l-15.55,-15.55l-15.55,15.55l-2.863,-2.863l15.55,-15.55l-15.55,-15.55l2.863,-2.863l15.55,15.55Z" />
-					</svg>
+					<img src="/static/v0.3.1-beta/images/cancel_cross.svg" alt="">
 				</button>
 			</div>
 			<div class="modal__items">
@@ -265,6 +205,40 @@
 					<button type="button" id="openQRBtn" class="button open">Opened</button>
 					<button type="button" id="deviceLockedQRBtn" class="button close">Locked</button>
 				</div>
+			</div>
+		</dialog>
+
+		<dialog class="modal" id="userUpdateModal">
+			<div class="modal__heading">
+				<h3>Edit user</h3>
+				<button class="closeModalBtn">
+					<img src="/static/v0.3.1-beta/images/cancel_cross.svg" alt="">
+				</button>
+			</div>
+			<div class="create_container">
+				<form action="/admin/accounts/edit" method="POST">
+					<input hidden type="hidden" name="{{ .CSRFTokenName }}" value="{{ .CSRFToken }}">
+					<input id="userUpdateUserNumber" hidden type="hidden" name="userNumber">
+					<div class="date_input">
+						<input id="userUpdateStartDate" type="date" name="startDate" required>
+					</div>
+					<div class="date_input">
+						<input id="userUpdateExpireDate" type="date" name="expireDate" required>
+					</div>
+					<div>
+						<input id="userUpdateUsername" type="text" name="username" required>
+					</div>
+					<div>
+						<input id="userUpdateDeviceId" type="text" name="deviceUUID" required>
+					</div>
+					<div>
+						<input id="userUpdateServerId" type="text" name="serverUUID" required>
+					</div>
+					<div class="restartModalButtons">
+						<button type="submit" id="userUpdateBtn" class="button">Update</button>
+						<button type="button" class="closeModalBtn">Cancel</button>
+					</div>
+				</form>
 			</div>
 		</dialog>
 
@@ -301,18 +275,11 @@
 		</div>
 		<hr>
 		<div class="qr-options">
-
-			<!-- qr code display modal -->
 			<dialog class="modal" id="qrModal">
 				<div class="modal__heading">
 					<h2>QR code</h2>
 					<button class="closeModalBtn" id="closeQrModalBtn">
-						<svg viewBox="0 0 64 64">
-							<path id="times"
-								d="M32.033,29.19l15.55,-15.55l2.863,2.863l-15.55,15.55l15.55,15.55l-2.863,2.863l-15.55,-15.55l-15.55,15.55l-2.863,-2.863l15.55,-15.55l-15.55,-15.55l2.863,-2.863l15.55,15.55Z" />
-							<path
-								d="M32.033,29.19l15.55,-15.55l2.863,2.863l-15.55,15.55l15.55,15.55l-2.863,2.863l-15.55,-15.55l-15.55,15.55l-2.863,-2.863l15.55,-15.55l-15.55,-15.55l2.863,-2.863l15.55,15.55Z" />
-						</svg>
+						<img src="/static/v0.3.1-beta/images/cancel_cross.svg" alt="">
 					</button>
 				</div>
 				<div id="qrContainer">
