@@ -16,7 +16,7 @@ import (
 
 // added easter egg
 func Hello(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello LoTone users.")	
+	fmt.Fprintf(w, "Hello LoTone users.")
 }
 
 func RedirectToHTTPSHandler(w http.ResponseWriter, r *http.Request) {
@@ -571,7 +571,156 @@ func ServerRestartPOST(w http.ResponseWriter, r *http.Request) {
 	utils.JSONRespond(w, http.StatusOK, "V2ray service restarted successfully.")
 }
 
-func AccountEditPUT(w http.ResponseWriter, r *http.Request) {
-	// TODO: implement editing user account.
-	// only the json?
+func AccountEditPOST(w http.ResponseWriter, r *http.Request) {
+	// load the config file.
+	configData, err := os.ReadFile(*config.ConfigFile)
+	if err != nil {
+		fmt.Println("Error reading file:", err)
+		utils.RenderError(w, "Unable to read the config file.", http.StatusInternalServerError)
+		return
+	}
+
+	// load the users file.
+	userData, err := os.ReadFile(*config.UserFile)
+	if err != nil {
+		fmt.Println("Error reading user data file: ", err)
+		utils.RenderError(w, "Unable to read the users file.", http.StatusInternalServerError)
+		return
+	}
+
+	// unmarshal the JSON config file into a map
+	var configResult map[string]json.RawMessage
+	err = json.Unmarshal(configData, &configResult)
+	if err != nil {
+		log.Println("Error unmarshalling JSON to map in config:", err)
+		utils.RenderError(w, "Error adding a new client to the existings configuration.", http.StatusInternalServerError)
+		return
+	}
+
+	// unmarshal the JSON users file into a map
+	var userResult map[string]json.RawMessage
+	err = json.Unmarshal(userData, &userResult)
+	if err != nil {
+		log.Println("Error unmarshalling JSON to map in users:", err)
+		utils.RenderError(w, "Error adding a new client to the users file.", http.StatusInternalServerError)
+		return
+	}
+
+	// unmarshal the "inbounds" key into a slice of Inbound structs
+	var inbounds []utils.Inbound
+	err = json.Unmarshal(configResult["inbounds"], &inbounds)
+	if err != nil {
+		log.Println("Error unmarshalling 'inbounds':", err)
+		utils.RenderError(w, "Error adding a new client to the existings configuration.", http.StatusInternalServerError)
+		return
+	}
+
+	// unmarshal the "users" key into a slice of clients.
+	var users []utils.Client
+	err = json.Unmarshal(userResult["clients"], &users)
+	if err != nil {
+		log.Println("Error unmarshalling 'users': ", err)
+		utils.RenderError(w, "Error adding a new client to the users file.", http.StatusInternalServerError)
+		return
+	}
+
+	// modify the inbounds by adding a new client with default AlterId of value 1.
+	modifiedV2rayClient := utils.V2rayClient{
+		Id:      r.FormValue("serverUUID"),
+		AlterId: 1,
+	}
+
+	// modify the users by adding a new user entity to the users file.
+	modifiedClient := utils.Client{
+		Id:         r.FormValue("serverUUID"),
+		AlterId:    1,
+		Username:   r.FormValue("username"),
+		DeviceId:   r.FormValue("deviceUUID"),
+		StartDate:  r.FormValue("startDate"),
+		ExpireDate: r.FormValue("expireDate"),
+	}
+
+	userNumber, err := strconv.Atoi(r.FormValue("userNumber"))
+	if err != nil {
+		log.Println("Error converting usernumber into integer", err)
+		utils.RenderError(w, "Error adding a new client to the existings configuration.", http.StatusInternalServerError)
+		return
+	}
+
+	if userNumber >= len(inbounds[0].Settings.Clients) {
+		log.Println("Invalid userNumber is assessed.")
+		utils.RenderError(w, "Error adding a new client to the existings configuration.", http.StatusInternalServerError)
+		return
+	}
+
+	// change with the modified user.
+	inbounds[0].Settings.Clients[userNumber] = modifiedV2rayClient
+	users[userNumber] = modifiedClient
+
+	// marshal the modified inbounds back to JSON
+	inboundBytes, err := json.Marshal(inbounds)
+	if err != nil {
+		log.Println("Error marshalling modified inbounds:", err)
+		utils.RenderError(w, "Error adding a new client to the existings configuration.", http.StatusInternalServerError)
+		return
+	}
+	// update the original result map with the modified inbounds
+	configResult["inbounds"] = inboundBytes
+
+	// marshal the modified users back to JSON
+	usersBytes, err := json.Marshal(users)
+	if err != nil {
+		log.Println("Error marshalling modified users:", err)
+		utils.RenderError(w, "Error adding a new user to the users file.", http.StatusInternalServerError)
+		return
+	}
+	userResult["clients"] = usersBytes
+
+	// marshal the entire result map back to JSON
+	finalConfigJSON, err := json.MarshalIndent(configResult, "", "  ")
+	if err != nil {
+		log.Println("Error marshalling final config JSON:", err)
+		utils.RenderError(w, "Error adding a new client to the existings configuration.", http.StatusInternalServerError)
+		return
+	}
+
+	// marshal the entire users result map back to JSON
+	finalUserJSON, err := json.MarshalIndent(userResult, "", " ")
+	if err != nil {
+		log.Println("Error marshalling final users JSON:", err)
+		utils.RenderError(w, "Error adding a new user to the users file.", http.StatusInternalServerError)
+		return
+	}
+
+	// Optional: Write the modified JSON back to a file
+	err = os.WriteFile(*config.ConfigFile, finalConfigJSON, 0644)
+	if err != nil {
+		log.Println("Error writing modified JSON to file:", err)
+		utils.RenderError(w, "Error adding a new client to the existings configuration.", http.StatusInternalServerError)
+		return
+	}
+
+	// Optional: Write the modified JSON back to a file
+	err = os.WriteFile(*config.UserFile, finalUserJSON, 0644)
+	if err != nil {
+		log.Println("Error writing modified JSON to file:", err)
+		utils.RenderError(w, "Error adding a new user to the users file.", http.StatusInternalServerError)
+		return
+	}
+
+	// prepare and send a push notification
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		log.Println("Error getting the ip address of the requester.")
+		utils.RenderError(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	title := *config.WebHost + " - User is updated"
+	message := modifiedClient.Username + "@" + *config.WebHostIP + " with [[" + modifiedClient.Id + "]] is updated by " + ip
+	for _, key := range config.GotifyAPIKeys {
+		utils.SendNoti(*config.GotifyServer, key, title, message, 5)
+	}
+
+	// since this has to be relative path there shouldn't be any "/" infront of(admin) the current path.
+	http.Redirect(w, r, "/admin/dashboard", http.StatusFound)
 }
