@@ -1,17 +1,37 @@
 {{ define "title"}} Server Manager: admin {{ end }}
 
-{{ define "sources"}} 
-	<link rel="stylesheet" type="text/css" href="/static/v0.2.0-beta/css/admin.css">
-	<script type="text/javascript" defer src="/static/v0.2.0-beta/javascript/admin.js"></script>
-	<link rel="preload" href="/static/v0.2.0-beta/javascript/dashboard.js" as="script">
-	<link rel="preload" href="/static/v0.2.0-beta/javascript/qrcode.min.js" as="script">
+{{ define "sources"}}
+<link rel="preload" href="/static/v0.3.1-beta/css/admin.css" as="style">
+<link rel="preload" href="/static/v0.3.1-beta/javascript/admin.js" as="script">
+
+<!-- dashboard javascript prefetch -->
+<link rel="prefetch" href="/static/v0.3.1-beta/javascript/dashboard.js" as="script">
+<link rel="prefetch" href="/static/v0.3.1-beta/javascript/qrcode.min.js" as="script">
+
+<!-- dashboard svg images prefetch -->
+<link rel="prefetch" href="/static/v0.3.1-beta/images/refresh_button.svg" as="img">
+<link rel="prefetch" href="/static/v0.3.1-beta/images/chevron_down.svg" as="img">
+<link rel="prefetch" href="/static/v0.3.1-beta/images/edit_button.svg" as="img">
+<link rel="prefetch" href="/static/v0.3.1-beta/images/qr_button.svg" as="img">
+<link rel="prefetch" href="/static/v0.3.1-beta/images/trash_bin_button.svg" as="img">
+<link rel="prefetch" href="/static/v0.3.1-beta/images/cancel_cross.svg" as="img">
+<link rel="prefetch" href="/static/v0.3.1-beta/images/lothone.png" as="img">
+
+<!-- dashboard style prefetch -->
+<link rel="prefetch" type="text/css" href="/static/v0.3.1-beta/css/dashboard.css" as="style">
+
+<link rel="icon" type="image/png" href="/static/v0.3.1-beta/images/lothone.png">
+<link rel="stylesheet" type="text/css" href="/static/v0.3.1-beta/css/admin.css">
+<script type="text/javascript" defer src="/static/v0.3.1-beta/javascript/admin.js"></script>
 {{ end }}
 
 {{ define "header" }}{{ end }}
 
-{{ define "main"}} 
+{{ define "main"}}
 <main>
-	<h1>LoThone</h1>
+	<h1 title="logo">
+		<img id="logo" src="/static/v0.3.1-beta/images/lothone.png" alt="lothone logo">
+	</h1>
 	<section class="card">
 		<h2>Admin panel Login</h2>
 		<div class="login-card">
@@ -32,12 +52,12 @@
 </main>
 {{ end }}
 
-{{ define "footer"}} 
+{{ define "footer"}}
 <footer>
 	<p>
 		&copy;2024 LoThone All rights reserved.
 		<br>
-		Version 0.2.0-beta
+		Version 0.3.1-beta
 	</p>
 </footer>
 {{ end }}
