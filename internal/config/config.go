@@ -62,7 +62,7 @@ const (
 	// TODO: change version variable and in the url of the static files path whenever making a release.
 
 	// version number of this server.
-	Version string = "v0.2.0-beta"
+	Version string = "v0.3.1-beta"
 )
 
 func init() {
