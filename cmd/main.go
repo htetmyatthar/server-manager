@@ -38,9 +38,9 @@ var (
 	// userLocker locks out the user from logging in if the user exceeds certain number of trials.
 	userLocker = utils.NewLockedOutRateLimiter()
 
-	// Defined rate limit: 1 request per every 5 seconds with a burst of 1 for each ip address.
+	// Defined rate limit: 1 request per every 5 seconds with a burst of 3 for each ip address.
 	// call Limit() method to apply the defined rate limit on the end points.
-	genericRateLimiter = m.NewRateLimiterMiddleware(1.0/5.0, 1, 5*time.Minute)
+	genericRateLimiter = m.NewRateLimiterMiddleware(1.0/5.0, 3, 5*time.Minute)
 )
 
 func init() {
@@ -92,11 +92,13 @@ func main() {
 
 	// routes HTTPS
 	muxHTTPS.HandleFunc("/", m.LoginRequired(h.DefaultHandler, sessionStore))
+	muxHTTPS.HandleFunc("/hello", h.Hello)
 	muxHTTPS.HandleFunc("GET /admin/login", h.AdminLoginGET(sessionStore))
 	muxHTTPS.HandleFunc("GET /admin/dashboard", m.LoginRequired(h.AdminDashboardGET, sessionStore))
 	muxHTTPS.HandleFunc("GET /server/ip", h.ServerIPHandlerGET)
 
 	muxHTTPS.HandleFunc("POST /admin/login", m.CSRFRequired(h.AdminLoginPOST(sessionStore, userLocker)))
+	muxHTTPS.HandleFunc("POST /admin/accounts/edit", m.CSRFRequired(m.LoginRequired(h.AccountEditPOST, sessionStore)))
 	muxHTTPS.HandleFunc("POST /admin/accounts", m.CSRFRequired(m.LoginRequired(h.AccountCreatePOST, sessionStore)))
 	muxHTTPS.HandleFunc("POST /admin/accounts/delete", m.CSRFRequired(m.LoginRequired(h.AccountDeletePOST, sessionStore)))
 	muxHTTPS.HandleFunc("POST /server", genericRateLimiter.Limit(m.CSRFRequired(m.LoginRequired(h.ServerRestartPOST, sessionStore))))
