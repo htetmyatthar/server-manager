@@ -39,6 +39,11 @@ main {
 		font-size: 1.8rem;
 		margin-bottom: 10px;
 		text-align: center;
+
+		#logo {
+			aspect-ratio: 1.2;
+			width: 250px;
+		}
 	}
 
 	h2 {
@@ -78,8 +83,14 @@ main {
 
 	.button {
 		padding: 10px;
-		background-color: #2A628F;
-		color: whitesmoke;
+		border-radius: 4px;
+		color: #0D47A1;
+		background: #E8F4FD;
+		border: 1px solid #2196F3;
+	}
+
+	.button:hover {
+		background: #BBE1FB;
 	}
 
 	.button:active {
