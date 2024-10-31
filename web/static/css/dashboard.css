@@ -115,7 +115,7 @@ input::-webkit-calendar-picker-indicator {
 			background: #E8F4FD;
 			border: 1px solid #2196F3;
 
-			svg {
+			img {
 				fill: #0D47A1;
 				width: 20px;
 				height: 20px;
@@ -175,7 +175,7 @@ input::-webkit-calendar-picker-indicator {
 		justify-content: space-between;
 	}
 
-	.actions svg {
+	.actions img {
 		width: 30px;
 	}
 
@@ -271,7 +271,7 @@ input::-webkit-calendar-picker-indicator {
 		background: #BBE1FB;
 	}
 
-	svg {
+	img {
 		fill: #0D47A1;
 		width: 20px;
 		height: 20px;
@@ -328,6 +328,10 @@ input::-webkit-calendar-picker-indicator {
 	margin: 0 0 0.5rem 0;
 }
 
+#userUpdateModal {
+	max-width: 450px;
+}
+
 .restart_form {
 	display: flex;
 	flex-direction: column;
@@ -376,7 +380,7 @@ input::-webkit-calendar-picker-indicator {
 		background: transparent;
 		border: none;
 
-		svg {
+		img {
 			fill: #d11a2a;
 			width: 20px;
 			height: 20px;
@@ -469,6 +473,12 @@ input::-webkit-calendar-picker-indicator {
 		justify-content: center;
 		width: 100%;
 		margin-top: 10px;
+	}
+}
+
+#userUpdateModal {
+	.modal__heading {
+		margin-bottom: 10px;
 	}
 }
 
@@ -594,14 +604,14 @@ footer {
 		/* Darker border when active */
 	}
 
-	.show-actions-btn svg {
+	.show-actions-btn img {
 		width: 20px;
 		transition: transform 0.3s ease;
 		/* Tint the chevron icon to match the text color */
 		filter: invert(27%) sepia(51%) saturate(4917%) hue-rotate(229deg) brightness(101%) contrast(95%);
 	}
 
-	.show-actions-btn.active svg {
+	.show-actions-btn.active img {
 		transform: rotate(180deg);
 	}
 
@@ -651,7 +661,7 @@ footer {
 		font-weight: 500;
 	}
 
-	.action-btn svg {
+	.action-btn img {
 		width: 24px;
 		margin-left: auto;
 	}
