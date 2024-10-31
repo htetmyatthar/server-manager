@@ -255,6 +255,9 @@ document.addEventListener("DOMContentLoaded", () => {
 	// restart server modal
 	const reStartModal = new Modal("#modal", "#serverRestartModalBtn", ".closeModalBtn", "#serverRestartBtn");
 
+	// user edit form modal
+	const userUpdateModal = new Modal("#userUpdateModal", "#qrUserNumber", ".closeModalBtn");
+
 	// qr display modal
 	const qrModal = new Modal("#qrModal", ".qrBtn", ".closeModalBtn", ".closeModalBtn");
 
@@ -324,7 +327,51 @@ document.addEventListener("DOMContentLoaded", () => {
 	// user edit buttons handler
 	document.querySelectorAll(".editBtn").forEach((button) => {
 		button.addEventListener("click", () => {
-			alert("Feature is not supported yet.")
+			// alert("Feature is not supported yet.")
+			const row = button.closest("tr");
+			const numberCell = row.querySelector("[data-cell='Number']");
+			const startDateCell = row.querySelector("[data-cell='Start date']")
+			const expireDateCell = row.querySelector("[data-cell='Expire date']")
+			const serverUUIDCell = row.querySelector("[data-cell='Server UUID']");
+			const deviceUUIDCell = row.querySelector("[data-cell='Device UUID']");
+			console.log(deviceUUIDCell);
+			const usernameCell = row.querySelector("[data-cell='Username']");
+
+			const userNumber = numberCell ? numberCell.dataset.value : "not found";
+			const startDate = startDateCell ? startDateCell.dataset.value : "not found";
+			const expireDate = expireDateCell ? expireDateCell.dataset.value : "not found";
+			const serverUUID = serverUUIDCell ? serverUUIDCell.dataset.value : "not found";
+			const deviceUUID = deviceUUIDCell ? deviceUUIDCell.dataset.value : "not found";
+			const username = usernameCell ? usernameCell.dataset.value : "not found";
+
+			// userNumber
+			document.querySelector("#userUpdateUserNumber").value = userNumber;
+
+			// username
+			const usernameInput = document.querySelector("#userUpdateUsername");
+			usernameInput.value = username;
+
+			// server uuid
+			const serverUUIDInput = document.querySelector("#userUpdateServerId")
+			serverUUIDInput.value = serverUUID;
+
+			// device uuid
+			const deviceUUIDInput = document.querySelector("#userUpdateDeviceId")
+			console.log(deviceUUID);
+			deviceUUIDInput.value = deviceUUID;
+
+			// start date
+			const startDateInput = document.querySelector("#userUpdateStartDate")
+			startDateInput.value = startDate;
+			console.log(startDateInput, startDate)
+
+			// start date
+			const expireDateInput = document.querySelector("#userUpdateExpireDate")
+			expireDateInput.value = expireDate;
+			console.log(expireDateInput, expireDate)
+
+			// open the user update modal
+			userUpdateModal.open();
 		})
 	})
 
