@@ -69,9 +69,11 @@ func AdminLoginGET(sessionStore data.SessionStore) http.HandlerFunc {
 		data := struct {
 			CSRFToken     string
 			CSRFTokenName string
+			Version       string
 		}{
 			CSRFToken:     token,
 			CSRFTokenName: config.CSRFFormFieldName,
+			Version:       config.Version,
 		}
 
 		w.WriteHeader(http.StatusOK)
@@ -207,12 +209,14 @@ func AdminDashboardGET(w http.ResponseWriter, r *http.Request) {
 
 	data := struct {
 		Clients         []utils.Client
+		ServerRegion    string
 		ServerIP        string
 		V2rayServerPort string
 		CSRFToken       string
 		CSRFTokenName   string
 	}{
 		Clients:         users,
+		ServerRegion:    *config.WebHostRegion,
 		ServerIP:        *config.WebHostIP,
 		V2rayServerPort: *config.V2rayPort,
 		CSRFToken:       token,

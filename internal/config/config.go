@@ -20,6 +20,7 @@ import (
 var (
 	gotifyAPIKeys    *string
 	WebHost          *string
+	WebHostRegion    *string
 	WebHostIP        *string
 	Admins           *string
 	WebPort          *string
@@ -62,11 +63,12 @@ const (
 	// TODO: change version variable and in the url of the static files path whenever making a release.
 
 	// version number of this server.
-	Version string = "v0.3.1-beta"
+	Version string = "v0.4.3-beta"
 )
 
 func init() {
 	WebHost = flag.String("hostname", "127.0.0.1", "fully qualify domain name of the server")
+	WebHostRegion = flag.String("region", "127.0.0.1", "geo location region of the physical server")
 	WebHostIP = flag.String("hostip", "127.0.0.1", "ipv4 or ipv6 address of the server")
 	WebPort = flag.String("webport", ":8888", "port number of the control panel web server")
 	V2rayPort = flag.String("v2rayport", "443", "port number of the v2ray proxy server")
