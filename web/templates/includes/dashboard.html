@@ -2,21 +2,21 @@
 
 {{ define "sources"}}
 <!-- style -->
-<link rel="preload" type="text/css" href="/static/v0.3.1-beta/css/dashboard.css" as="style">
+<link rel="preload" type="text/css" href="/static/v0.4.3-beta/css/dashboard.css" as="style">
 
 <!-- svg images -->
-<link rel="preload" href="/static/v0.3.1-beta/images/refresh_button.svg" as="image" type="image/svg+xml">
-<link rel="preload" href="/static/v0.3.1-beta/images/chevron_down.svg" as="image" type="image/svg+xml">
-<link rel="preload" href="/static/v0.3.1-beta/images/edit_button.svg" as="image" type="image/svg+xml">
-<link rel="preload" href="/static/v0.3.1-beta/images/qr_button.svg" as="image" type="image/svg+xml">
-<link rel="preload" href="/static/v0.3.1-beta/images/trash_bin_button.svg" as="image" type="image/svg+xml">
-<link rel="preload" href="/static/v0.3.1-beta/images/cancel_cross.svg" as="image" type="image/svg+xml">
-<link rel="preload" href="/static/v0.3.1-beta/images/lothone.png" as="image" type="image/png">
+<link rel="preload" href="/static/v0.4.3-beta/images/refresh_button.svg" as="image" type="image/svg+xml">
+<link rel="preload" href="/static/v0.4.3-beta/images/chevron_down.svg" as="image" type="image/svg+xml">
+<link rel="preload" href="/static/v0.4.3-beta/images/edit_button.svg" as="image" type="image/svg+xml">
+<link rel="preload" href="/static/v0.4.3-beta/images/qr_button.svg" as="image" type="image/svg+xml">
+<link rel="preload" href="/static/v0.4.3-beta/images/trash_bin_button.svg" as="image" type="image/svg+xml">
+<link rel="preload" href="/static/v0.4.3-beta/images/cancel_cross.svg" as="image" type="image/svg+xml">
+<link rel="preload" href="/static/v0.4.3-beta/images/lothone.png" as="image" type="image/png">
 
-<link rel="stylesheet" type="text/css" href="/static/v0.3.1-beta/css/dashboard.css">
-<link rel="icon" type="image/png" href="/static/v0.3.1-beta/images/lothone.png">
-<script type="text/javascript" src="/static/v0.3.1-beta/javascript/qrcode.min.js" defer></script>
-<script type="text/javascript" src="/static/v0.3.1-beta/javascript/dashboard.js" defer></script>
+<link rel="stylesheet" type="text/css" href="/static/v0.4.3-beta/css/dashboard.css">
+<link rel="icon" type="image/png" href="/static/v0.4.3-beta/images/lothone.png">
+<script type="text/javascript" src="/static/v0.4.3-beta/javascript/qrcode.min.js" defer></script>
+<script type="text/javascript" src="/static/v0.4.3-beta/javascript/dashboard.js" defer></script>
 {{ end }}
 
 {{ define "header" }}{{ end }}
@@ -27,7 +27,7 @@
 		<div class="users__heading">
 			<h1>Users List</h1>
 			<button id="userRefreshBtn" class="button" title="click to refresh">
-				<img src="/static/v0.3.1-beta/images/refresh_button.svg" alt="">
+				<img src="/static/v0.4.3-beta/images/refresh_button.svg" alt="">
 			</button>
 		</div>
 		<div id="searchInputContainer">
@@ -73,20 +73,20 @@
 						<div class="actions-container">
 							<button class="show-actions-btn" data-buttonValue="show actions">
 								Actions
-								<img src="/static/v0.3.1-beta/images/chevron_down.svg" alt="">
+								<img src="/static/v0.4.3-beta/images/chevron_down.svg" alt="">
 							</button>
 							<div class="actions">
 								<button type="button" class="action-btn edit-btn editBtn" title="Edit User"
 									data-buttonValue="edit user">
-									<img src="/static/v0.3.1-beta/images/edit_button.svg" alt="">
+									<img src="/static/v0.4.3-beta/images/edit_button.svg" alt="">
 								</button>
 								<button type="button" class="action-btn qr-btn generateQRBtn" title="Generate QR Code"
 									data-buttonValue="generate qr">
-									<img src="/static/v0.3.1-beta/images/qr_button.svg" alt="">
+									<img src="/static/v0.4.3-beta/images/qr_button.svg" alt="">
 								</button>
 								<button type="button" class="action-btn delete-btn deleteBtn" title="Delete User"
 									data-buttonValue="delete user">
-									<img src="/static/v0.3.1-beta/images/trash_bin_button.svg" alt="">
+									<img src="/static/v0.4.3-beta/images/trash_bin_button.svg" alt="">
 								</button>
 							</div>
 						</div>
@@ -104,7 +104,7 @@
 			<div class="serverInfo">
 				<h2>Server Information</h2>
 				<button id="serverIPRefreshBtn" class="button" title="click to refresh">
-					<img src="/static/v0.3.1-beta/images/refresh_button.svg" alt="">
+					<img src="/static/v0.4.3-beta/images/refresh_button.svg" alt="">
 				</button>
 			</div>
 			<table>
@@ -117,7 +117,7 @@
 				</thead>
 				<tbody>
 					<tr>
-						<td data-cell="Region">Singapore</td>
+						<td data-cell="Region" data-region="{{ .ServerRegion }}" id="serverRegion" >{{ .ServerRegion }}</td>
 						<td id="serverIP" data-cell="V2ray Server IP">{{ .ServerIP }}</td>
 						<td id="v2rayServerPort" data-cell="V2ray Server Port" data-port="{{ .V2rayServerPort }}">
 							{{ .V2rayServerPort }}
@@ -134,7 +134,7 @@
 				<div class="modal__heading">
 					<h3>Restart V2ray server</h3>
 					<button class="closeModalBtn">
-						<img src="/static/v0.3.1-beta/images/cancel_cross.svg" alt="">
+						<img src="/static/v0.4.3-beta/images/cancel_cross.svg" alt="">
 					</button>
 				</div>
 				<div class="modal__items">
@@ -160,7 +160,7 @@
 			<div class="modal__heading">
 				<h3>Delete user</h3>
 				<button class="closeModalBtn">
-					<img src="/static/v0.3.1-beta/images/cancel_cross.svg" alt="">
+					<img src="/static/v0.4.3-beta/images/cancel_cross.svg" alt="">
 				</button>
 			</div>
 			<div class="modal__items">
@@ -195,7 +195,7 @@
 			<div class="modal__heading">
 				<h3>Generate QR</h3>
 				<button class="closeModalBtn">
-					<img src="/static/v0.3.1-beta/images/cancel_cross.svg" alt="">
+					<img src="/static/v0.4.3-beta/images/cancel_cross.svg" alt="">
 				</button>
 			</div>
 			<div class="modal__items">
@@ -212,7 +212,7 @@
 			<div class="modal__heading">
 				<h3>Edit user</h3>
 				<button class="closeModalBtn">
-					<img src="/static/v0.3.1-beta/images/cancel_cross.svg" alt="">
+					<img src="/static/v0.4.3-beta/images/cancel_cross.svg" alt="">
 				</button>
 			</div>
 			<div class="create_container">
@@ -273,13 +273,12 @@
 				</form>
 			</div>
 		</div>
-		<hr>
 		<div class="qr-options">
 			<dialog class="modal" id="qrModal">
 				<div class="modal__heading">
 					<h2>QR code</h2>
 					<button class="closeModalBtn" id="closeQrModalBtn">
-						<img src="/static/v0.3.1-beta/images/cancel_cross.svg" alt="">
+						<img src="/static/v0.4.3-beta/images/cancel_cross.svg" alt="">
 					</button>
 				</div>
 				<div id="qrContainer">
@@ -309,7 +308,7 @@
 		<span class="nowrap wrap-point">Unauthorized use and/or duplication of this material</span>
 		<span class="nowrap">without express and written permission</span>
 		<span class="nowrap">from this site’s owner is strictly prohibited</span>
-		<span class="nowrap">Version 0.2.0-beta</span>
+		<span class="nowrap">Version {{ .Version }}</span>
 	</p>
 </footer>
 {{ end }}
