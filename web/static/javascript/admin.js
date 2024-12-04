@@ -18,12 +18,12 @@ document.addEventListener("DOMContentLoaded", () => {
  * disableBtn(input, button);	// Output: the button will be enable when the input is not empty.
 */
 function disableBtn(inputField, btn) {
-    btn.disabled = true;
-    inputField.addEventListener("input", function() {
-        if (inputField.value.trim() !== "") {
-            btn.disabled = false;
-        } else {
-            btn.disabled = true;
-        }
-    });
+	btn.disabled = true;
+	inputField.addEventListener("input", function() {
+		if (inputField.value.trim() !== "") {
+			btn.disabled = false;
+		} else {
+			btn.disabled = true;
+		}
+	});
 }
