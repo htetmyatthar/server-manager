@@ -21,6 +21,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/htetmyatthar/server-manager/internal/config"
 	. "github.com/htetmyatthar/server-manager/internal/config"
 	. "github.com/htetmyatthar/server-manager/internal/database"
 )
@@ -113,9 +114,11 @@ func RenderError(w http.ResponseWriter, message string, status int) {
 	data := struct {
 		StatusCode int
 		Message    string
+		Version    string
 	}{
 		StatusCode: status,
 		Message:    message,
+		Version:    config.Version,
 	}
 	err := apologyTemplate.Execute(w, data)
 	if err != nil {
