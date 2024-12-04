@@ -252,6 +252,94 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 	});
 
+	// Get the table and it's headers
+	const table = document.getElementById("userTable");
+	const headers = table.querySelectorAll("thead th");
+
+	const sortableColumnIndices = [0, 1, 4, 5];
+
+	// Keep track of sorting state
+	let currentSortColumn = null;
+
+	// Add click event to sortable headers
+	sortableColumnIndices.forEach(index => {
+		const header = headers[index];
+		header.style.cursor = 'pointer';
+		header.addEventListener('click', function() {
+			// Reset previous header styles
+			sortableColumnIndices.forEach(idx => {
+				headers[idx].style.backgroundColor = '';
+			});
+
+			// Apply red background to current sorted column header
+			header.style.backgroundColor = '#2196F3';
+
+			sortTable(table, index);
+		});
+	});
+
+	function sortTable(table, columnIndex) {
+		const tbody = table.querySelector('tbody');
+		const rows = Array.from(tbody.querySelectorAll('tr'));
+
+		// If clicking the same column again, revert to original order
+		if (currentSortColumn === columnIndex) {
+			// Revert to original order (assuming data-original-order exists)
+			rows.sort((a, b) => {
+				const orderA = parseInt(a.getAttribute('data-original-order') || a.rowIndex);
+				const orderB = parseInt(b.getAttribute('data-original-order') || b.rowIndex);
+				return orderA - orderB;
+			});
+
+			// Reset header styles when returning to original order
+			headers[columnIndex].style.backgroundColor = '';
+			currentSortColumn = null;
+		} else {
+			// Sort by the new column
+			rows.sort((a, b) => {
+				// Store original order if not already stored
+				if (!a.getAttribute('data-original-order')) {
+					rows.forEach((row, index) => {
+						row.setAttribute('data-original-order', index);
+					});
+				}
+
+				// Get cell values for comparison
+				const cellA = a.querySelector(`td:nth-child(${columnIndex + 1})`);
+				const cellB = b.querySelector(`td:nth-child(${columnIndex + 1})`);
+
+				const valueA = cellA.getAttribute('data-value') || cellA.textContent.trim();
+				const valueB = cellB.getAttribute('data-value') || cellB.textContent.trim();
+
+				// Special handling for username column (index 1)
+				if (columnIndex === 1) {
+					// Split username and sort by the last part after '/'
+					const lastPartA = valueA.split('/').pop();
+					const lastPartB = valueB.split('/').pop();
+					return lastPartA.localeCompare(lastPartB);
+				}
+
+				// Handle different types of sorting for other columns
+				if (!isNaN(Date.parse(valueA)) && !isNaN(Date.parse(valueB))) {
+					// Date sorting
+					return new Date(valueA) - new Date(valueB);
+				} else if (!isNaN(valueA) && !isNaN(valueB)) {
+					// Numeric sorting
+					return parseFloat(valueA) - parseFloat(valueB);
+				} else {
+					// Standard string sorting for other columns
+					return valueA.localeCompare(valueB);
+				}
+			});
+
+			currentSortColumn = columnIndex;
+		}
+
+		// Clear and re-populate the tbody with sorted rows
+		tbody.innerHTML = '';
+		rows.forEach(row => tbody.appendChild(row));
+	}
+
 	// restart server modal
 	const reStartModal = new Modal("#modal", "#serverRestartModalBtn", ".closeModalBtn", "#serverRestartBtn");
 
@@ -553,6 +641,7 @@ function generateURI(qrData) {
 	const address = window.location.hostname;
 	const subDomain = address.split(".")[0];
 	const port = document.getElementById("v2rayServerPort").dataset.port;
+	const region = document.getElementById("serverRegion").dataset.region;
 
 	const vmessTemplate = {
 		add: address,
@@ -564,7 +653,7 @@ function generateURI(qrData) {
 		net: "tcp",
 		path: "/",
 		port: port,
-		ps: `valid before (${qrData.expDate}) ${subDomain}-Singapore-${qrData.id.slice(-4)}`,
+		ps: `valid before (${qrData.expDate}) ${subDomain}-${region}-${qrData.id.slice(-4)}`,
 		scy: "none",
 		sni: "",
 		tls: "",
@@ -582,9 +671,10 @@ function generateLockedURI(qrData) {
 	}
 	const prefix = "vmess://";
 	const lockPrefix = "v2box://locked=";
-	const address = window.location.hostname; // Hardcoded for simplicity, consider making it configurable
+	const address = window.location.hostname;
 	const subDomain = address.split(".")[0];
 	const port = document.getElementById("v2rayServerPort").dataset.port;
+	const region = document.getElementById("serverRegion").dataset.region;
 
 	const vmessTemplate = {
 		add: address,
@@ -597,7 +687,7 @@ function generateLockedURI(qrData) {
 		net: "tcp",
 		path: "/",
 		port: port,
-		ps: `valid before (${qrData.expDate}) ${subDomain}-Singapore-${qrData.id.slice(-4)}`,
+		ps: `valid before (${qrData.expDate}) ${subDomain}-${region}-${qrData.id.slice(-4)}`,
 		scy: "none",
 		sni: "",
 		tls: "",
