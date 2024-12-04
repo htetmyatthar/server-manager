@@ -1,28 +1,28 @@
 {{ define "title"}} Server Manager: admin {{ end }}
 
 {{ define "sources"}}
-<link rel="preload" href="/static/v0.3.1-beta/css/admin.css" as="style">
-<link rel="preload" href="/static/v0.3.1-beta/javascript/admin.js" as="script">
+<link as="style" rel="preload" href="/static/{{ .Version }}/css/admin.css">
+<link as="script" rel="preload" href="/static/{{ .Version }}/javascript/admin.js">
 
 <!-- dashboard javascript prefetch -->
-<link rel="prefetch" href="/static/v0.3.1-beta/javascript/dashboard.js" as="script">
-<link rel="prefetch" href="/static/v0.3.1-beta/javascript/qrcode.min.js" as="script">
+<link as="script" rel="prefetch" href="/static/{{ .Version }}/javascript/dashboard.js">
+<link as="script" rel="prefetch" href="/static/{{ .Version }}/javascript/qrcode.min.js">
 
 <!-- dashboard svg images prefetch -->
-<link rel="prefetch" href="/static/v0.3.1-beta/images/refresh_button.svg" as="img">
-<link rel="prefetch" href="/static/v0.3.1-beta/images/chevron_down.svg" as="img">
-<link rel="prefetch" href="/static/v0.3.1-beta/images/edit_button.svg" as="img">
-<link rel="prefetch" href="/static/v0.3.1-beta/images/qr_button.svg" as="img">
-<link rel="prefetch" href="/static/v0.3.1-beta/images/trash_bin_button.svg" as="img">
-<link rel="prefetch" href="/static/v0.3.1-beta/images/cancel_cross.svg" as="img">
-<link rel="prefetch" href="/static/v0.3.1-beta/images/lothone.png" as="img">
+<link as="image" rel="prefetch" href="/static/{{ .Version }}/images/refresh_button.svg">
+<link as="image" rel="prefetch" href="/static/{{ .Version }}/images/chevron_down.svg">
+<link as="image" rel="prefetch" href="/static/{{ .Version }}/images/edit_button.svg">
+<link as="image" rel="prefetch" href="/static/{{ .Version }}/images/qr_button.svg">
+<link as="image" rel="prefetch" href="/static/{{ .Version }}/images/trash_bin_button.svg">
+<link as="image" rel="prefetch" href="/static/{{ .Version }}/images/cancel_cross.svg">
+<link as="image" rel="prefetch" href="/static/{{ .Version }}/images/lothone.png">
 
 <!-- dashboard style prefetch -->
-<link rel="prefetch" type="text/css" href="/static/v0.3.1-beta/css/dashboard.css" as="style">
+<link as="style" rel="prefetch" type="text/css" href="/static/{{ .Version }}/css/dashboard.css">
 
-<link rel="icon" type="image/png" href="/static/v0.3.1-beta/images/lothone.png">
-<link rel="stylesheet" type="text/css" href="/static/v0.3.1-beta/css/admin.css">
-<script type="text/javascript" defer src="/static/v0.3.1-beta/javascript/admin.js"></script>
+<link rel="icon" type="image/png" href="/static/{{ .Version }}/images/lothone.png">
+<link rel="stylesheet" type="text/css" href="/static/{{ .Version }}/css/admin.css">
+<script type="text/javascript" defer src="/static/{{ .Version }}/javascript/admin.js"></script>
 {{ end }}
 
 {{ define "header" }}{{ end }}
@@ -30,7 +30,7 @@
 {{ define "main"}}
 <main>
 	<h1 title="logo">
-		<img id="logo" src="/static/v0.3.1-beta/images/lothone.png" alt="lothone logo">
+		<img id="logo" src="/static/{{ .Version }}/images/lothone.png" alt="lothone logo">
 	</h1>
 	<section class="card">
 		<h2>Admin panel Login</h2>
@@ -57,7 +57,7 @@
 	<p>
 		&copy;2024 LoThone All rights reserved.
 		<br>
-		Version 0.3.1-beta
+		Version {{ .Version }}
 	</p>
 </footer>
 {{ end }}
